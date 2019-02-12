@@ -314,17 +314,21 @@ write.csv(d3, "102502_07_03_08_21_2018_6.5m_QA.csv")
 # d10m_3
 # dll.5m_3
 # d6.5m_3
+
 rbr_dat <- rbind(m0.4.d3, d1.5m.3, d3m_3, d5.1m_3, d6.5m_3, d7.5m_3, d10m_3, dll.5m_3)
 summary(rbr_dat)
+
 # fix sensor serial number 12500 to 102500
 rbr_dat$Sensor[rbr_dat$Sensor == 12500] <- 102500
 summary(rbr_dat)
-# add in year
+
+# add in year of deployment
 rbr_dat$year <- 2018
+
 # add in deployement 
 rbr_dat$deployment <- "Summer2018"
 
-# fix timstamp column 
+# fix column order
 rbr_dat_exp <- subset(rbr_dat, select=c(Sensor, deployment, year, timestamp, Depth, Temperature))
 summary(rbr_dat_exp)
 
