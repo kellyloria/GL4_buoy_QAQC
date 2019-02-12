@@ -334,10 +334,12 @@ write.csv(rbr_dat_exp, "Summer2018_RBR.csv") # complied data file of all RBR tem
 
 # check to make sure all sensors + data are there
 names(rbr_dat)
-qplot(timestamp, Temperature, data = rbr_dat, geom="point", ylab = "Temperature [C]", color = factor(Sensor)) +
+Summer2018_RBR <- qplot(timestamp, Temperature, data = rbr_dat, geom="point", ylab = "Temperature [C]",
+                        color = factor(Depth)) +
   scale_x_datetime(date_breaks = "72 hour", labels = date_format("%b %d")) +
-  theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0))
+  theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0)) + theme_classic()
 
+ggsave("Summer2018_RBR.pdf", Summer2018_RBR, scale = 2, width = 15, height = 5, units = c("cm"), dpi = 500)
 
 
 
