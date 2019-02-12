@@ -319,9 +319,13 @@ summary(rbr_dat)
 # fix sensor serial number 12500 to 102500
 rbr_dat$Sensor[rbr_dat$Sensor == 12500] <- 102500
 summary(rbr_dat)
+# add in year
+rbr_dat$year <- 2018
+# add in deployement 
+rbr_dat$deployment <- "Summer2018"
 
 # fix timstamp column 
-rbr_dat_exp <- subset(rbr_dat, select=c(Sensor, Depth, timestamp, Temperature))
+rbr_dat_exp <- subset(rbr_dat, select=c(Sensor, deployment, year, timestamp, Depth, Temperature))
 summary(rbr_dat_exp)
 
 write.csv(rbr_dat_exp, "Summer2018_RBR.csv") # complied data file of all RBR temp sensors along buoy line 
