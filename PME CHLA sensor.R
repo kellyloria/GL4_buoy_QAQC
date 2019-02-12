@@ -164,5 +164,21 @@ ggsave("Summer2018_chlor_comp_transformed.pdf", chlor_comp_plot.transformed, sca
 
 
 # select final parameters for C7 data
+names(d3)
+d3$deployment <- "Summer2018"
+d3$year <- 2018
+d3$C7_output <- (d3$Sensor)
 
+# select for relevant parameters
+PME_CHL_dat_exp <- subset(d3, select=c(sensor, deployment, year, timestamp, depth,
+                                              Temperature, C7_output, chlora, Gain, Battery))
+summary(PME_CHL_dat_exp)
 
+write.csv(PME_CHL_dat_exp, "Summer2018_PME_CHLA.csv") # complied data file of all RBR temp sensors along buoy line
+
+# final check plot
+chlacheck <- qplot(timestamp, chlora, data = PME_CHL_dat_exp, geom="point", ylab = "Chl-a (ug/L)") +
+  scale_x_datetime(date_breaks = "72 hour", labels = date_format("%b %d")) +
+  theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0)) + theme_bw()
+
+ggsave("Summer2018_chlor_QAQC.pdf", chlacheck, scale = 2, width = 12, height = 5, units = c("cm"), dpi = 500)
