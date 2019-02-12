@@ -1,6 +1,11 @@
 ####################
 # # # Chlor-a # # #
 ####################
+library(ggplot2)
+library(scales)
+library(dplyr)
+
+
 d <- read.csv("C7_07_03_08_21_2018_corrected.csv", header=T)
 names(d)
 
@@ -18,8 +23,8 @@ qplot(timestamp, Temperature, data = d2, geom="point", ylab = "Temperature [C]",
   scale_x_datetime(date_breaks = "72 hour", labels = date_format("%b %d")) +
   theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0))
 
-temp_mean <- (mean(d2$Temperature)) #0.01148371
-temp_sd <- (sd(d2$Temperature)) #1.997242
+temp_mean <- (mean(d2$Temperature)) #8.729836
+temp_sd <- (sd(d2$Temperature)) #1.488609
 
 # look for values 4 SD away from mean 
 temp_cutoff <- (temp_sd*4)
@@ -28,27 +33,27 @@ temp_cutoff <- (temp_sd*4)
 temp_upL <- (temp_mean + temp_cutoff)
 temp_lowL <- (temp_mean - temp_cutoff)
 
-range(d2$Temperature)
+range(d2$Temperature) # currently no temps outside of range 
 
-hist(d2$Sensor)
+hist(d2)
 qplot(timestamp, Sensor, data = d2, geom="point", ylab = "Temperature [C]", color = factor(depth)) +
   scale_x_datetime(date_breaks = "72 hour", labels = date_format("%b %d")) +
   theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0))
 
-chlor_mean <- (mean(d2$Sensor)) #0.01148371
-chlor_sd <- (sd(d2$Sensor)) #1.997242
+chlor_mean <- (mean(d2$Sensor)) #51.62525
+chlor_sd <- (sd(d2$Sensor)) #35.51271
 
-# look for values 4 SD away from mean 
+# look for values 3 SD away from mean 
 chlor_cutoff <- (chlor_sd*3)
 
 #find outlier values 
 chlor_upL <- (chlor_mean + chlor_cutoff)
-chlor_lowL <- (chlor_mean - chlor_cutoff)
+chlor_lowL <- (chlor_mean - chlor_cutoff) # lower limit not realistic so used 3
 
 range(d2$Sensor)
 names(d2)
 
-d3 <- subset(d2, Sensor <= 193.6761 & Sensor >= 3, 
+d3 <- subset(d2, Sensor <= 158.1634 & Sensor >= 3, 
              select=c(sensor: timestamp))
 
 range((d3$Sensor))
@@ -56,8 +61,10 @@ hist(d3$Sensor)
 
 qplot(timestamp, Sensor, data = d3, geom="point", ylab = "Temperature [C]", color = factor(depth)) +
   scale_x_datetime(date_breaks = "72 hour", labels = date_format("%b %d")) +
-  theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0))
+  theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0)) 
 
+range(d3$Battery)
+range(d3$Gain) # gain = 10 = 10 volts = 0 to 0.075
 
 write.csv(d3, "Chlor_QA_1.csv")
 
