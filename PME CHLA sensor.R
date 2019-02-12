@@ -116,7 +116,7 @@ names(d3)
 
 
 chlor_comp_plot2 <- ggplot(newdat, aes(x = date1, y = Sensor)) + 
-  geom_point(aes(color = label), size = 1) + 
+  geom_point(aes(color = label), size = 1.75) + 
   scale_color_manual(values = c("#00AFBB", "#E7B800")) +   
   labs(title = "Chlora at 9 meters from C7 in situ and filter extractions",
        caption = "(Data logged every 30min July to August 2018)",
@@ -153,7 +153,7 @@ newdat_tran <- rbind(c7comp, chlcomp)
 
 
 chlor_comp_plot.transformed <- ggplot(newdat_tran, aes(x = date1, y = chlora)) + 
-  geom_point(aes(color = label), size = 1) + 
+  geom_point(aes(color = label), size = 1.75) + 
   scale_color_manual(values = c("#00AFBB", "#E7B800")) +   
   labs(title = "Chlora at 9 meters from C7 in situ and filter extractions",
        caption = "(Data logged every 30min July to August 2018)",
