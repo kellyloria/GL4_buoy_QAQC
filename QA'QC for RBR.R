@@ -1,4 +1,5 @@
-# QA'QC for RBR TSolo data
+# QA'QC for 8 RBR TSolo sensors
+# Summer 2018 deployment
 
 library(ggplot2)
 library(scales)
