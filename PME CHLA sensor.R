@@ -409,5 +409,6 @@ chlacheck <- qplot(timestamp, chlora, data = new_tran_dat, geom="point", ylab = 
 #ggsave("Summer2018_chlor_QAQC.pdf", chlacheck, scale = 2, width = 12, height = 5, units = c("cm"), dpi = 500)
 
 # the early and mid season values look unreliable 
+# PAR sensors shows evidence of instability 
 
 
