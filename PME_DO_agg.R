@@ -209,11 +209,9 @@ range(do.3m$timestamp)
 do.3ma <- subset(do.3m,timestamp >= as.POSIXct('2019-07-25 13:00:00') & 
                   timestamp <= as.POSIXct('2019-07-30 00:00:00'))
 range(do.3ma$timestamp)
-
 do.3mb <- subset(do.3m,timestamp >= as.POSIXct('2019-07-30 12:00:00') & 
                    timestamp <= as.POSIXct('2019-08-20 00:00:00'))
 range(do.3mb$timestamp)
-
 do.3m_1 <- rbind(do.3ma, do.3mb)
 
 #check new summary
@@ -270,7 +268,7 @@ summary(do.9m_1)
 ###
 # 3. add in column for depth, deployment and sensor 
 do.9m_1$depth <- 9
-do.9m_1$deployment <- "Winter2018"
+do.9m_1$deployment <- "Summer2019"
 do.9m_1$sensor <- 245673
 
 ###
@@ -327,7 +325,7 @@ p <- ggplot(PME_DO_agg19, aes(x=timestamp, y=(DO), colour =as.factor(depth))) +
   scale_x_datetime(date_breaks = "504 hour", labels = date_format("%b %d")) +
   theme_classic() + xlab("Time stamp") + ylab("DO") 
 
-p <- ggplot(PME_DO_agg19, aes(x=timestamp, y=(temperature), colour =as.factor(depth))) +
+p <- ggplot(PME_DO_agg19, aes(x=timestamp, y=(temperature), colour =as.factor(deployment))) +
   geom_point(alpha = 0.5) +
   #stat_smooth(method="lm", se=TRUE, formula=y ~ poly(x, 3, raw=TRUE), alpha=0.15) +
   scale_x_datetime(date_breaks = "504 hour", labels = date_format("%b %d")) +
