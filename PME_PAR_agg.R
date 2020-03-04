@@ -9,7 +9,6 @@ library(dplyr)
 old.datPAR <- read.csv("gl4.buoy.PMEPAR.data.csv", header=T)
 
 # Fix timestamp - so it is no longer a character:
-# Fix timestamp - so it is no longer a character:
 old.datPAR$timestamp1 <- as.POSIXct(old.datPAR$timestamp, format= "%Y-%m-%d %H:%M")
 range(old.datPAR$timestamp1)
 
