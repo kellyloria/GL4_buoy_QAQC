@@ -8,7 +8,6 @@
 ##
 ## ---------------------------
 ## Load packages:
-
 library(ggplot2)
 library(dplyr)
 
@@ -16,7 +15,7 @@ library(dplyr)
 # I. Read in past year's data
 old.datPAR <- read.csv("Summer2018_PME_PAR.csv", header=T)
 
-# Fix timestamp - so it is no longer a character:
+#   Fix timestamp - so it is no longer a character:
 old.datPAR$timestamp1 <- as.POSIXct(old.datPAR$timestamp, format= "%Y-%m-%d %H:%M")
 range(old.datPAR$timestamp1)
 
@@ -328,7 +327,7 @@ p <- ggplot(PME_PAR_agg19, aes(x=timestamp, y=(PAR), colour =as.factor(depth))) 
 
 ## ---------------------------
 # VI. End notes:
-#     flgging codes:
+#     NWT flgging codes:
 #       n=no flag; m=missing; q=questionable; e=estimated; o=outlier
 #
 # sensor manual: https://www.pme.com/wp-content/uploads/2017/06/miniPAR-logger-pme.pdf
