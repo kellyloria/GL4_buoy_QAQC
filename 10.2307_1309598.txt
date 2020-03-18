@@ -1,0 +1,14 @@
+@article{10.2307/1309598,
+ ISSN = {00063568, 15253244},
+ URL = {http://www.jstor.org/stable/1309598},
+ abstract = {Reductionistic and holistic approaches appear to alternate in the history of science and also in public affairs. To bridge the gap between the laboratory and the real world in environmental science, more effort needs to be invested in the use of bounded and partially enclosed outdoor experimental setups, or mesocosms. Mesocosms can be replicated and provide a degree of realism not possible in the laboratory. Best of all, parts (populations) and wholes (ecosystems) can be investigated simultaneously by a team of researchers.},
+ author = {Eugene P. Odum},
+ journal = {BioScience},
+ number = {9},
+ pages = {558--562},
+ publisher = {[American Institute of Biological Sciences, Oxford University Press]},
+ title = {The Mesocosm},
+ volume = {34},
+ year = {1984}
+}
+

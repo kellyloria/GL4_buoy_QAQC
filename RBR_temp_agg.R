@@ -4,6 +4,11 @@ library(ggplot2)
 library(scales)
 library(dplyr)
 
+# Back ground information for users:
+#    link to product mannual
+#    https://rbr-global.com/products/compact-loggers/rbrsolo-t
+#    RBR sensors have a measurement range of -5°C to +35°C
+
 # Read in past year's data
 old.datTemp <- read.csv("gl4.buoy.RBRTemp.data.csv", header=T)
 

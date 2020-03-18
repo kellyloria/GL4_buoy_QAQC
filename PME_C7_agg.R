@@ -7,7 +7,13 @@ library(dplyr)
 library(lme4)
 library(lmerTest)
 
-### For later ###
+# Back ground information for users:
+#    link to product mannual
+#    https://www.pme.com/products/cyclops-7-logger
+#    Raw C7 output needs to be corrected for chlorophyll-a exctractions
+
+
+### For C7 output corrections ###
 # read in chl-a extractions: water_qualityCHLA.csv
 chla1819 <- read.csv("water_qualityCHLA.csv", header=T)
 names(chla1819)
@@ -61,6 +67,15 @@ qplot(timestamp1, chlora20, data = old.datC7, geom="point") +
   #scale_x_datetime(date_breaks = "504 hour", labels = date_format("%b %d")) +
   theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0)) 
 
+# the data pre-July 29st looks poor and should be flagged 
+old.datC7$flag_RE[old.datC7$timestamp1 <= as.POSIXct('2018-07-29 00:00:00')] <- "q"
+old.datC7$flag_RE[old.datC7$timestamp1 >= as.POSIXct('2018-07-29 00:00:00')] <- "n"
+
+#check to see if data was appropriately flagged:
+qplot(timestamp1, chlora20, data = old.datC7, geom="point", color=flag_RE) +
+  #scale_x_datetime(date_breaks = "504 hour", labels = date_format("%b %d")) +
+  theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0)) 
+
 summary(old.datC7)
 
 ##############################
@@ -77,7 +92,7 @@ summary(C7.3m)
 C7.3m$timestamp1 <- as.POSIXct(C7.3m$Mountain.Standard.Time, format="%Y-%m-%d %H:%M:%OS")
 range(C7.3m$timestamp1)
 
-# restrict for date range
+# restrict for date range of deployment:
 C7.3m <- subset(C7.3m,timestamp1 >= as.POSIXct('2018-08-24 13:00:00') & 
                   timestamp1 <= as.POSIXct('2019-07-23 00:00:00'))
 range(C7.3m$timestamp1)
@@ -119,6 +134,11 @@ C7.3m$depth <- 3
 C7.3m$deployment <- "Winter2018"
 C7.3m$sensor <- 240115
 
+# add in variable for flag:
+C7.3m$flag_RE[C7.3m$timestamp1 >= as.POSIXct('2018-08-24 13:00:00') ] <- "n"
+
+
+
 #######################################################
 ########## ALL DO + Winter2018 DATA #################
 
@@ -134,12 +154,12 @@ names(PME_C7_winter18)
 # 3.select for relevant parameters
 old.datC7_1 <- subset(old.datC7, select=c(sensor, deployment, year, timestamp1, depth,
                                           temperature, C7_output, gain, chlora20,
-                                          battery))
+                                          battery, flag_RE))
 ###
 # 3.select for relevant parameters
 PME_C7_winter18_1 <- subset(PME_C7_winter18, select=c(sensor, deployment, year, timestamp1, depth,
                                                       Temperature, Sensor, Gain, chlora20,
-                                                      Battery))
+                                                      Battery, flag_RE))
 ###
 # 4. change names
 colnames(PME_C7_winter18_1)[6] = "temperature"
@@ -153,7 +173,7 @@ PME_C7_agg18 <- rbind(old.datC7_1, PME_C7_winter18_1)
 summary(PME_C7_agg18)
 
 # Plot and facet by deployment:
-p <- ggplot(PME_C7_agg18, aes(x=timestamp1, y=(chlora20), colour =as.factor(depth))) +
+p <- ggplot(PME_C7_agg18, aes(x=timestamp1, y=(chlora20), colour =as.factor(flag_RE))) + # can swap color for deployment too 
   geom_point(alpha = 0.5) +
   #stat_smooth(method="lm", se=TRUE, formula=y ~ poly(x, 3, raw=TRUE), alpha=0.15) +
   scale_x_datetime(date_breaks = "504 hour", labels = date_format("%b %d")) +
@@ -211,8 +231,12 @@ C7.9m$depth <- 9
 C7.9m$deployment <- "Summer2019"
 C7.9m$sensor <- 240115
 
+# add in variable for flag:
+C7.9m$flag_RE[C7.9m$timestamp1 >= as.POSIXct('2019-07-30 12:00:00') ] <- "n"
+
+
 ######################################################
-########## ALL DO + Winter2018 DATA #################
+########## ALL DO + Summer2019 DATA #################
 
 ###
 # 1. Add in year 
@@ -223,8 +247,8 @@ names(PME_C7_summer2019)
 
 # 3.select for relevant parameters
 PME_C7_summer2019_1 <- subset(PME_C7_summer2019, select=c(sensor, deployment, year, timestamp1, depth,
-                                                      Temperature, Sensor, Gain, chlora20,
-                                                      Battery))
+                                                      Temperature, sensor, Gain, chlora20,
+                                                      Battery, flag_RE))
 ###
 # 4. change names
 colnames(PME_C7_summer2019_1)[6] = "temperature"
@@ -250,4 +274,3 @@ colnames(PME_C7_agg19)[4] = "timestamp"
 colnames(PME_C7_agg19)[9] = "est.chl_a"
 
 #write.csv(PME_C7_agg19, "Summer2019_PME_C7.csv") # complied data file of all DO sensors along buoy line
-

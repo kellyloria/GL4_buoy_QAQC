@@ -1,13 +1,16 @@
 # QA'QC for 3 PME Dissolved Oxygen sensors
-# Onging
+# summer 2018 - summer 2019
+
+# load packages for visualization
 library(ggplot2)
 library(scales)
 library(dplyr)
 
-# For PME DO a Q value of < 0.7 is poor quality
-# https://www.pme.com/product-installs/q-measurement-found-in-minidot
+# Back ground information for users
+#    For PME DO a Q value of < 0.7 is poor quality
+#    https://www.pme.com/product-installs/q-measurement-found-in-minidot
 
-# Read in past year's data
+# Read in past year's data - here 2018 summer
 old.datDO <- read.csv("GL4.buoy.PMEDO.data.csv", header=T)
 
 # Fix timestamp - so it is no longer a character:
