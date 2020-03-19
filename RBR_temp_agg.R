@@ -12,8 +12,8 @@ library(ggplot2)
 library(dplyr)
 
 ## ---------------------------
-# I. Read in Summer 2018 deployment
-old.datTemp <- read.csv("gl4.buoy.RBRTemp.data.csv", header=T)
+# I. Read in Summer 2018 deployment ("old data")
+old.datTemp <- read.csv("Summer2018_RBR.csv", header=T)
 
 #   Fix timestamp - so it is no longer a character:
 old.datTemp$timestamp1 <- as.POSIXct(old.datTemp$timestamp, format= "%Y-%m-%d %H:%M:%OS")
@@ -183,22 +183,28 @@ summary(RBR_temp_winter18)
 #   2. Add in year 
 RBR_temp_winter18 <- transform(RBR_temp_winter18,
                              year = as.numeric(format(timestamp1, '%Y')))
+RBR_temp_winter18$flag_Temp <- "n"
 
 #   3. Select for relevant parameters
 RBR_temp_winter18 <- subset(RBR_temp_winter18, select=c(sensor, deployment, year, timestamp1, depth,
-                                                    Temperature))
+                                                    Temperature, flag_Temp))
+colnames(RBR_temp_winter18)[4] = "timestamp"
 colnames(RBR_temp_winter18)[6] = "temperature"
+names(RBR_temp_winter18)
 
 #   4. Select for relevant parameters
-old.datTemp <- subset(old.datTemp, select=c(sensor, deployment, year, timestamp1, depth,
-                                                        temperature))
+old.datTemp <- subset(old.datTemp, select=c(Sensor, deployment, year, timestamp1, Depth,
+                                                        Temperature, flag_Temp))
+#
+names(old.datTemp)
+colnames(old.datTemp)[1] = "sensor"
+colnames(old.datTemp)[4] = "timestamp"
+colnames(old.datTemp)[5] = "depth"
+colnames(old.datTemp)[6] = "temperature"
 
 #   5. Add winter 2018 to summer 2018
 RBR_temp_agg18 <- rbind(old.datTemp, RBR_temp_winter18)
 summary(RBR_temp_agg18)
-
-#   6. change names
-colnames(RBR_temp_agg18)[4] = "timestamp"
 
 # Plot and facet by deployment:
 p <- ggplot(RBR_temp_agg18, aes(x=timestamp, y=(temperature), colour =as.factor(depth))) +
@@ -465,18 +471,16 @@ summary(RBR_temp_summer19)
 RBR_temp_summer19 <- transform(RBR_temp_summer19,
                                year = as.numeric(format(timestamp, '%Y')))
 
+RBR_temp_summer19$flag_Temp <- "n"
+
 #   3. Select for relevant parameters
 RBR_temp_summer19 <- subset(RBR_temp_summer19, select=c(sensor, deployment, year, timestamp, depth,
-                                                        Temperature))
+                                                        Temperature, flag_Temp))
 colnames(RBR_temp_summer19)[6] = "temperature"
 
 #   4. Add RBR_temp_agg18 to summer 2019
 RBR_temp_agg19 <- rbind(RBR_temp_agg18, RBR_temp_summer19)
 summary(RBR_temp_agg19)
-
-# Add flagging code
-#   * All values have lookeed normal up to this point though
-RBR_temp_agg19$flag_Temp <- "n"
 
 # Plot and facet by deployment:
 p <- ggplot(RBR_temp_agg19, aes(x=timestamp, y=(temperature), colour =as.factor(depth))) +
