@@ -1,5 +1,5 @@
 ## ---------------------------
-## QA'QC for for 3 PME Dissolved Oxygen sensors
+## QA'QC for 3 PME Dissolved Oxygen sensors
 ##    ongoing space for aggregation of new deployment data
 ##
 ## Author: Kelly A. Loria
@@ -315,11 +315,11 @@ p <- ggplot(PME_DO_agg19, aes(x=timestamp, y=(temperature), colour =as.factor(de
 
 
 ## ---------------------------
-# VI. End notes:
-#   NWT flgging codes:
+# VIII. End notes:
+#   * NWT flgging codes:
 #       n=no flag; m=missing; q=questionable; e=estimated; o=outlier
 #
-##  Back ground information for users:
-#     For PME DO a Q value of < 0.7 is poor quality
-#     Sensor manual: https://www.pme.com/product-installs/q-measurement-found-in-minidot
+##  * Back ground information for users:
+#       For PME DO a Q value of < 0.7 is poor quality
+#       Sensor manual: https://www.pme.com/product-installs/q-measurement-found-in-minidot
 

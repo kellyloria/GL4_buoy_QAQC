@@ -1,5 +1,5 @@
 ## ---------------------------
-## QA'QC for 1 photosynthetically active radiation (PAR)
+## QA'QC for 1 photosynthetically active radiation (PAR) Sensor
 ##    ongoing space for aggregation of new deployment data
 ##
 ## Author: Kelly A. Loria
@@ -327,8 +327,8 @@ p <- ggplot(PME_PAR_agg19, aes(x=timestamp, y=(PAR), colour =as.factor(depth))) 
 
 ## ---------------------------
 # VI. End notes:
-#     NWT flgging codes:
+#   * NWT flgging codes:
 #       n=no flag; m=missing; q=questionable; e=estimated; o=outlier
 #
-# sensor manual: https://www.pme.com/wp-content/uploads/2017/06/miniPAR-logger-pme.pdf
+#   * sensor manual: https://www.pme.com/wp-content/uploads/2017/06/miniPAR-logger-pme.pdf
 
