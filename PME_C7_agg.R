@@ -13,7 +13,6 @@ library(dplyr)
 
 ## ---------------------------
 # File path setup:
-
 if (dir.exists('/Volumes/data/data2/rawarchive/gl4/buoy/')){
   inputDir<- '/Volumes/data/data2/rawarchive/gl4/buoy/'
   outputDir<- '/Users/kellyloria/Desktop/' 

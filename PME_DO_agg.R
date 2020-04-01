@@ -10,19 +10,24 @@
 ## Load packages:
 library(ggplot2)
 library(dplyr)
+library(tidyverse)
+
+## ---------------------------
+# File path setup:
+if (dir.exists('/Volumes/data/data2/rawarchive/gl4/buoy/')){
+  inputDir<- '/Volumes/data/data2/rawarchive/gl4/buoy/'
+  outputDir<- '/Users/kellyloria/Desktop/' 
+}
+
+# Don't forget to 
+#     1. Set output path to personal desktop 
+#     2. Physically move final files (pending datamanager approval) into final folder in server
 
 ## ---------------------------
 # I. Read in past year's data - here 2018 summer
-old.datDO <- read.csv("Summer2018_PME_DO.csv", header=T)
+old.datDO <- read.csv(paste0(inputDir,"/2018_2019/DO/1808_1907_deployment/Summer2018_PME_DO.csv"), header=T)
 
 #   Fix timestamp - so it is no longer a character:
-tmpDateFormat<-"%Y-%m-%d %H:%M:%OS"
-tmp1stmp <- as.POSIXct(old.datDO$timestamp,format=tmpDateFormat)
-# Keep the new dates only if they all converted correctly
-if(length(tmp1date) == length(tmp1stmp[!is.na(tmp1stmp)])){old.datDO$timestamp <- tmp1stmp } else {print("Date conversion failed for dt1$date. Please inspect the data and do the date conversion yourself.")}                                                                    
-rm(tmpDateFormat,tmp1stmp) 
-summary(old.datDO) #check to make sure timestamp looks okay
-
 #   If it doesn't work use:
 old.datDO$timestamp <- as.POSIXct(old.datDO$timestamp, format="%Y-%m-%d %H:%M:%OS")
 range(old.datDO$timestamp)
@@ -31,7 +36,7 @@ range(old.datDO$timestamp)
 ## I. Winter 2018 Deployment: 3m DO sensor 
 
 #     1. Read in new raw data at depth (for 2018-2019): DO_214423_180823_190723_3m.TXT
-do.3m <- read.delim("DO_214423_180823_190723_3m.TXT", header=T, sep = ',')
+do.3m <- read.delim(paste0(inputDir,"/2018_2019/DO/1808_1907_deployment/DO_214423_180823_190723_3m.TXT"), header=T, sep = ',')
 names(do.3m)
 summary(do.3m)
 
@@ -72,7 +77,7 @@ qplot(timestamp, Dissolved.Oxygen, data = do.3m, geom="point", color = factor(de
 ## II. Winter 2018 Deployment: 7m DO sensor 
 
 #   1. Read in new raw data at depth (for 2018-2019): DO_245673_180823_190723_7m.TXT
-do.7m <- read.delim("DO_245673_180823_190723_7m.TXT", header=T, sep = ',')
+do.7m <- read.delim(paste0(inputDir,"/2018_2019/DO/1808_1907_deployment/DO_245673_180823_190723_7m.TXT"), header=T, sep = ',')
 
 #   2. Fix timestamp
 do.7m$timestamp <- as.POSIXct(do.7m$Mountain.Standard.Time, format="%Y-%m-%d %H:%M:%OS")
@@ -106,7 +111,7 @@ qplot(timestamp, Dissolved.Oxygen, data = do.7m, geom="point", ylab = "DO [mgL]"
 ## III. Winter 2018 Deployment: 11m DO sensor 
 
 #   1. Read in new raw data at depth (for 2018-2019): DO_245673_180823_190723_7m.TXT
-do.11m <- read.delim("DO_248353_180823_190723_11m.TXT", header=T, sep = ',')
+do.11m <- read.delim(paste0(inputDir,"/2018_2019/DO/1808_1907_deployment/DO_248353_180823_190723_11m.TXT"), header=T, sep = ',')
 names(do.11m)
 summary(do.11m)
 
@@ -173,8 +178,6 @@ summary(PME_DO_agg18)
 #   6. Plot and color by deployment:
 p <- ggplot(PME_DO_agg18, aes(x=timestamp, y=(DO), colour =as.factor(depth))) +
   geom_point(alpha = 0.5) +
-  #stat_smooth(method="lm", se=TRUE, formula=y ~ poly(x, 3, raw=TRUE), alpha=0.15) +
-  scale_x_datetime(date_breaks = "504 hour", labels = date_format("%b %d")) +
   theme_classic() + xlab("Time stamp") + ylab("DO") 
 
 
@@ -187,7 +190,7 @@ p <- ggplot(PME_DO_agg18, aes(x=timestamp, y=(DO), colour =as.factor(depth))) +
 
 # 3m DO sensor
 #   1. Read in new raw data at depth (for 2018-2019): DO_214423_190725_190820_3m.TXT
-do.3m <- read.delim("DO_214423_190725_190820_3m.TXT", header=T, sep = ',')
+do.3m <- read.delim(paste0(inputDir,"/2018_2019/DO/1907_1908_deployment/DO_214423_190725_190820_3m.TXT"), header=T, sep = ',')
 names(do.3m)
 summary(do.3m)
 
@@ -219,18 +222,16 @@ do.3m_1$flag_DO <- "n"
 
 # Data check from plots
 qplot(timestamp, Temperature, data = do.3m_1, geom="point", ylab = "Temperature [C]", color = factor(depth)) +
-  scale_x_datetime(date_breaks = "72 hour", labels = date_format("%b %d")) +
   theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0))
 
 qplot(timestamp, Dissolved.Oxygen, data = do.3m_1, geom="point", ylab = "DO [mgL]", color = factor(depth)) +
-  scale_x_datetime(date_breaks = "72 hour", labels = date_format("%b %d")) +
   theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0))
 
 ## ---------------------------
 ## VI. Summer19 Deployment: 9m DO Sensor
 
 #   1. Read in new raw data at depth (for 2018-2019): 
-do.9m <- read.delim("DO_245673_190725_190820_9m.TXT", header=T, sep = ',')
+do.9m <- read.delim(paste0(inputDir,"/2018_2019/DO/1907_1908_deployment/DO_245673_190725_190820_9m.TXT"), header=T, sep = ',')
 names(do.9m)
 summary(do.9m)
 
@@ -261,12 +262,10 @@ do.9m_1$flag_Temp <- "n"
 do.9m_1$flag_DO <- "n"
 
 # Data check from plots
-qplot(timestamp, Temperature, data = do.9m_1, geom="point", ylab = "Temperature [C]", color = factor(depth)) +
-  scale_x_datetime(date_breaks = "72 hour", labels = date_format("%b %d")) +
+qplot(timestamp, Temperature, data = do.9m_1, geom="point", ylab = "Temperature [C]", color = factor(depth))  +
   theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0))
 
 qplot(timestamp, Dissolved.Oxygen, data = do.9m_1, geom="point", ylab = "DO [mgL]", color = factor(depth)) +
-  scale_x_datetime(date_breaks = "72 hour", labels = date_format("%b %d")) +
   theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0))
 
 ## ---------------------------
@@ -301,18 +300,15 @@ summary(PME_DO_agg19)
 # Plot and color by deployment:
 p <- ggplot(PME_DO_agg19, aes(x=timestamp, y=(DO), colour =as.factor(depth))) +
   geom_point(alpha = 0.5) +
-  #stat_smooth(method="lm", se=TRUE, formula=y ~ poly(x, 3, raw=TRUE), alpha=0.15) +
-  scale_x_datetime(date_breaks = "504 hour", labels = date_format("%b %d")) +
+  #stat_smooth(method="lm", se=TRUE, formula=y ~ poly(x, 3, raw=TRUE), alpha=0.15)
   theme_classic() + xlab("Time stamp") + ylab("DO") 
 
 p <- ggplot(PME_DO_agg19, aes(x=timestamp, y=(temperature), colour =as.factor(deployment))) +
   geom_point(alpha = 0.5) +
-  #stat_smooth(method="lm", se=TRUE, formula=y ~ poly(x, 3, raw=TRUE), alpha=0.15) +
-  scale_x_datetime(date_breaks = "504 hour", labels = date_format("%b %d")) +
+  #stat_smooth(method="lm", se=TRUE, formula=y ~ poly(x, 3, raw=TRUE), alpha=0.15) 
   theme_classic() + xlab("Time stamp") + ylab("DO") 
 
-#write.csv(PME_DO_agg19, "Summer2019_PME_DO.csv") # complied data file of all DO sensors along buoy line
-
+#write.csv(PME_DO_agg19, paste0(outputDir,"Summer2019_PME_DO.csv")) # complied data file of all DO sensors along buoy line
 
 ## ---------------------------
 # VIII. End notes:
