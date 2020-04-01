@@ -12,16 +12,25 @@ library(ggplot2)
 library(dplyr)
 
 ## ---------------------------
-# Back ground information for users:
-#    link to product mannual
-#    https://www.pme.com/products/cyclops-7-logger
-#    Raw C7 output needs to be corrected for chlorophyll-a exctractions
+# File path setup:
 
+if (dir.exists('/Volumes/data/data2/rawarchive/gl4/buoy/')){
+  inputDir<- '/Volumes/data/data2/rawarchive/gl4/buoy/'
+  outputDir<- '/Users/kellyloria/Desktop/' 
+}
+
+# Don't forget to 
+#     1. Set output path to personal desktop 
+#     2. Physically move final files (pending datamanager approval) into final folder in server
+
+## ---------------------------
+# Important note:
+#    Raw C7 output needs to be corrected for chlorophyll-a exctractions
 
 ## ---------------------------
 # I. For C7 output corrections 
 # read in chl-a extractions: water_qualityCHLA.csv
-chla1819 <- read.csv("water_qualityCHLA.csv", header=T)
+chla1819 <- read.csv(paste0(inputDir, "2018_2019/C7/1808_1907_deployment/water_qualityCHLA.csv"), header=T)
 names(chla1819)
 
 # 2. Fix timestamp - so it is no longer a character:
@@ -31,7 +40,7 @@ range(chla1819$ndate)
 
 ## ---------------------------
 # II. Summer 2018 deployment
-old.datC7 <- read.csv("gl4.buoy.PMEC7.data.csv", header=T)
+old.datC7 <- read.csv(paste0(inputDir, "2018_2019/C7/1808_1907_deployment/gl4.buoy.PMEC7.data.csv"), header=T)
 
 # 1. Fix timestamp - so it is no longer a character:
 old.datC7$timestamp1 <- as.POSIXct(old.datC7$timestamp, format= "%Y-%m-%d %H:%M")
@@ -93,7 +102,7 @@ qplot(timestamp1, chlora20, data = old.datC7, geom="point", color=flag_RE) +
 #     C7 sensor @ 3m
 
 # 1. Read in new raw data at depth (for 2018-2019): C7_240115_180823_190723_3m.TXT
-C7.3m <- read.delim("C7_240115_180823_190723_3m.TXT", header=T, sep = ',')
+C7.3m <- read.delim(paste0(inputDir, "2018_2019/C7/1907_1908_deployment/C7_240115_180823_190723_3m.TXT"), header=T, sep = ',')
 names(C7.3m)
 summary(C7.3m)
 
@@ -185,7 +194,7 @@ p <- ggplot(PME_C7_agg18, aes(x=timestamp1, y=(chlora20), colour =as.factor(flag
 # V. Summer 2019 Deployment
 
 # 1. Read in data:
-C7.9m <- read.delim("C7_240115_190730_190820_9m.TXT", header=T, sep = ',')
+C7.9m <- read.delim(paste0(inputDir, "2018_2019/C7/1907_1908_deployment/C7_240115_190730_190820_9m.TXT"), header=T, sep = ',')
 
 # 2. Fix timestamp
 C7.9m$timestamp1 <- as.POSIXct(C7.9m$Mountain.Standard.Time, format="%Y-%m-%d %H:%M:%OS")
@@ -272,7 +281,7 @@ colnames(PME_C7_agg19)[4] = "timestamp"
 colnames(PME_C7_agg19)[9] = "est.chl_a"
 
 # 7. Export and save data:
-#write.csv(PME_C7_agg19, "Summer2019_PME_C7.csv") # complied data file of all DO sensors along buoy line
+# write.csv(PME_C7_agg19, paste0(outputDir, "Summer2019_PME_C7.csv")) # complied data file of all DO sensors along buoy line
 
 
 ## ---------------------------
