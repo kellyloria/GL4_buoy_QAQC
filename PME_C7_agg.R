@@ -10,6 +10,7 @@
 ## Load packages:
 library(ggplot2)
 library(dplyr)
+library(lubridate)
 
 ## ---------------------------
 # File path setup:
@@ -32,9 +33,12 @@ if (dir.exists('/Volumes/data/data2/rawarchive/gl4/buoy/')){
 chla1819 <- read.csv(paste0(inputDir, "2018_2019/C7/1808_1907_deployment/water_qualityCHLA.csv"), header=T)
 names(chla1819)
 
-# 2. Fix timestamp - so it is no longer a character:
-chla1819$ndate <- as.Date(as.Date.character(chla1819$date, format="%m/%d/%y"))
+# 2. Fix date and timestamp - so it is no longer a character:
+chla1819$ndate <- as.Date(as.Date.character(chla1819$date, format="%Y-%m-%d"))
 range(chla1819$ndate)
+
+chla1819$timestamp1 <- as.POSIXct(chla1819$timestamp, format= "%Y-%m-%d %H:%M:%OS")
+range(chla1819$timestamp1)
 
 
 ## ---------------------------
@@ -56,11 +60,13 @@ qplot(timestamp1, chlora, data = old.datC7, geom="point") +
   theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0)) 
 
 # 3. Compare C7 output with chl-a extraction values. 
-#       Need to extract just dates from timestamps 
+#       Need to extract just dates from timestamps and then restrict for morining sampling
 old.datC7 <- transform(old.datC7, ndate = as.Date(timestamp1))
+old.datC7$time <- (strftime(old.datC7$timestamp1,"%H:%M:%OS"))
+old.datC7.1 <- with(old.datC7, old.datC7[hour(timestamp1)>= 9 & hour(timestamp1) < 13 , ] )
 
 # 4. Combine C7 output and chl-a extractions
-sum18comp <- left_join(old.datC7, chla1819[c("ndate", "depth","chl_a")],
+sum18comp <- left_join(old.datC7.1, chla1819[c("ndate", "depth","chl_a")],
                   by = c("ndate" = "ndate"))
 summary(sum18comp)
 
@@ -81,7 +87,7 @@ sum18comp.mod <- lmer(chl_a ~ C7_output + (1|depth.y), data=sum18comp)
 summary(sum18comp.mod)
 
 # 7. Transfor output for chl-a beta estimate
-old.datC7$chlora20 <- (old.datC7$chlora * 0.065541)
+old.datC7$chlora20 <- (old.datC7$chlora * 0.07877)
 
 qplot(timestamp1, chlora20, data = old.datC7, geom="point") +
   #scale_x_datetime(date_breaks = "504 hour", labels = date_format("%b %d")) +
@@ -120,11 +126,14 @@ qplot(timestamp1, Sensor, data = C7.3m, geom="point") +
   theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0))
 
 # 5. Compare C7 output with chl-a extraction values. 
-#       Need to extract just dates from timestamps 
+#       Need to extract just dates from timestamps and then restrict for morining sampling 
 C7.3m <- transform(C7.3m, ndate = as.Date(timestamp1))
+C7.3m$time <- (strftime(C7.3m$timestamp1,"%H:%M:%OS"))
+C7.3m.1 <- with(C7.3m, C7.3m[hour(timestamp1)>= 9 & hour(timestamp1) < 13 , ] )
+
 
 # 6. Combine C7 output and chl-a extractions
-win18comp <- left_join(C7.3m, chla1819[c("ndate", "depth","chl_a")],
+win18comp <- left_join(C7.3m.1, chla1819[c("ndate", "depth","chl_a")],
                        by = c("ndate" = "ndate"))
 summary(win18comp)
 
@@ -134,12 +143,19 @@ p <- ggplot(win18comp) +
   geom_point(aes(x=ndate, y=(chl_a)), shape = 17, color="#316326", alpha = 0.8)  +
   theme_classic() 
 
+# 7b.Plot the relationship between chl-a values and C7 values
+p <- ggplot(win18comp, aes(x=chl_a, y=Sensor)) +
+  geom_point(alpha = 0.2)  +
+  stat_smooth(method ="lm") +
+  theme_classic()  
+
+
 # 8. Get a beta value for the relationship between chl-a values and C7 values
-win18comp.mod <- lmer(chl_a ~ Sensor + (1|depth), data=win18comp)
+win18comp.mod <- lm(chl_a ~ Sensor, data=win18comp)
 summary(win18comp.mod)
 
 # 9. Transfor output for chl-a estimate
-C7.3m$chlora20 <- (C7.3m$Sensor * 0.001158)
+C7.3m$chlora20 <- (C7.3m$Sensor * 0.018453)
 
 # 10. Plot transformed data
 qplot(timestamp1, chlora20, data = C7.3m, geom="point") +
@@ -209,11 +225,13 @@ qplot(timestamp1, Sensor, data = C7.9m, geom="point") +
   theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0))
 
 # 5. Compare C7 output with chl-a extraction values. 
-#       Need to extract just dates from timestamps
+#       Need to extract just dates from timestamps and then restrict for morining sampling
 C7.9m <- transform(C7.9m, ndate = as.Date(timestamp1))
+C7.9m$time <- (strftime(C7.9m$timestamp1,"%H:%M:%OS"))
+C7.9m.1 <- with(C7.9m, C7.9m[hour(timestamp1)>= 9 & hour(timestamp1) < 13 , ] )
 
 # 6. Combine C7 output and chl-a extractions
-sum19comp <- left_join(C7.9m, chla1819[c("ndate", "depth","chl_a")],
+sum19comp <- left_join(C7.9m.1, chla1819[c("ndate", "depth","chl_a")],
                        by = c("ndate" = "ndate"))
 
 # 7. Plot the combined data
@@ -222,12 +240,17 @@ p <- ggplot(sum19comp) +
   geom_point(aes(x=ndate, y=(chl_a)), shape = 17, color="#316326", alpha = 0.8)  +
   theme_classic() 
 
+p <- ggplot(sum19comp, aes(x=chl_a, y=Sensor)) +
+  geom_point(alpha = 0.2)  +
+  stat_smooth(method ="lm") +
+  theme_classic()  
+
 # 8. Get a beta value for the relationship between chl-a values and C7 values
 sum19comp.mod <- lmer(chl_a ~ Sensor + (1|depth), data=sum19comp)
 summary(sum19comp.mod)
 
 # 9. Transfor output for chl-a estimate
-C7.9m$chlora20 <- (C7.9m$Sensor * 3.437e-03)
+C7.9m$chlora20 <- (C7.9m$Sensor * 0.011536)
 
 # 10. Plot transformed data
 qplot(timestamp1, chlora20, data = C7.9m, geom="point") +
@@ -270,9 +293,7 @@ summary(PME_C7_agg19)
 
 # 5. Plot and facet by deployment:
 p <- ggplot(PME_C7_agg19, aes(x=timestamp1, y=(chlora20), colour =as.factor(depth))) +
-  geom_point(alpha = 0.5) +
-  #stat_smooth(method="lm", se=TRUE, formula=y ~ poly(x, 3, raw=TRUE), alpha=0.15) +
-  scale_x_datetime(date_breaks = "504 hour", labels = date_format("%b %d")) +
+  geom_point(alpha = 0.5)  +
   theme_classic() + xlab("Time stamp") 
 
 # 6. Fix column names
@@ -289,5 +310,7 @@ colnames(PME_C7_agg19)[9] = "est.chl_a"
 #       n=no flag; m=missing; q=questionable; e=estimated; o=outlier
 #
 #   * Back ground information for users:
-#       link to product mannual: https://rbr-global.com/products/compact-loggers/rbrsolo-t
-#       RBR sensors have a measurement range of -5°C to +35°C
+#       link to product mannual: https://www.turnerdesigns.com/cyclops-7f-submersible-fluorometer?lightbox=dataItem-jd6b16b81
+#       And here: https://www.pme.com/wp-content/uploads/2014/07/Manual1.pdf
+
+
