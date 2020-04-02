@@ -12,8 +12,18 @@ library(ggplot2)
 library(dplyr)
 
 ## ---------------------------
+# File path setup:
+if (dir.exists('/Volumes/data/data2/rawarchive/gl4/buoy/')){
+  inputDir<- '/Volumes/data/data2/rawarchive/gl4/buoy/'
+  outputDir<- '/Users/kellyloria/Desktop/' 
+}
+# Don't forget to 
+#     1. Set output path to personal desktop 
+#     2. Physically move final files (pending datamanager approval) into final folder in server
+
+## ---------------------------
 # I. Read in past year's data
-old.datPAR <- read.csv("Summer2018_PME_PAR.csv", header=T)
+old.datPAR <- read.csv(paste0(inputDir,"/2018_2019/PAR/1808_1908_deployment/Summer2018_PME_PAR.csv"), header=T)
 
 #   Fix timestamp - so it is no longer a character:
 old.datPAR$timestamp1 <- as.POSIXct(old.datPAR$timestamp, format= "%Y-%m-%d %H:%M")
@@ -25,7 +35,7 @@ range(old.datPAR$timestamp1)
 ###
 # 3m PAR sensor 
 #   1. Read in new raw data at depth (for 2018-2019): PAR_695220_180823_190723_3m.TXT
-PAR.3m <- read.delim("PAR_695220_180823_190723_3m.TXT", header=T, sep = ',')
+PAR.3m <- read.delim(paste0(inputDir,"/2018_2019/PAR/1808_1908_deployment/PAR_695220_180823_190723_3m.TXT"), header=T, sep = ',')
 names(PAR.3m)
 summary(PAR.3m)
 
@@ -47,23 +57,18 @@ summary(PAR.3m$tilt) # positive tilt values are likely out of range
 
 #   5. Check out the data pre-flagging:
 qplot(timestamp1, tilt, data = PAR.3m, geom="point") +
-  #scale_x_datetime(date_breaks = "504 hour", labels = date_format("%b %d")) +
   theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0)) 
 
-qplot(timestamp1, Acceleration.Y, data = PAR.3m, geom="point") +
-  #scale_x_datetime(date_breaks = "504 hour", labels = date_format("%b %d")) +
+qplot(timestamp1, Acceleration.Y, data = PAR.3m, geom="point")  +
   theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0)) 
 
 qplot(timestamp1, Acceleration.X, data = PAR.3m, geom="point") +
-  #scale_x_datetime(date_breaks = "504 hour", labels = date_format("%b %d")) +
   theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0)) 
 
 qplot(timestamp1, Acceleration.Z, data = PAR.3m, geom="point") +
-  #scale_x_datetime(date_breaks = "504 hour", labels = date_format("%b %d")) +
   theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0)) 
 
 qplot(timestamp1, PAR, data = PAR.3m, geom="point") +
-  #scale_x_datetime(date_breaks = "504 hour", labels = date_format("%b %d")) +
   theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0)) 
 
 #   *Recap so far: positive tilt values might correspond to out of range values for 
@@ -88,7 +93,6 @@ PAR.3m$flag_Y[ PAR.3m$Acceleration.Y > 0.004438161 | PAR.3m$Acceleration.Y < -0.
 PAR.3m$flag_Y[ PAR.3m$Acceleration.Y <= 0.004438161 & PAR.3m$Acceleration.Y >= -0.1098816 ] <- "n"
 
 qplot(timestamp1, Acceleration.Y, data = PAR.3m, geom="point", color=flag_Y) +
-  #scale_x_datetime(date_breaks = "504 hour", labels = date_format("%b %d")) +
   theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0)) 
 
 #   8. QA'QC accelerations:Z
@@ -182,7 +186,6 @@ colnames(PME_PAR_agg18)[12] = "battery"
 p <- ggplot(PME_PAR_agg18, aes(x=timestamp, y=(PAR), colour =as.factor(flag_T))) +
   geom_point(alpha = 0.5) +
   #stat_smooth(method="lm", se=TRUE, formula=y ~ poly(x, 3, raw=TRUE), alpha=0.15) +
-  scale_x_datetime(date_breaks = "504 hour", labels = date_format("%b %d")) +
   theme_classic() + xlab("Time stamp") + ylab("PAR") 
 
 ## ---------------------------
@@ -193,7 +196,7 @@ p <- ggplot(PME_PAR_agg18, aes(x=timestamp, y=(PAR), colour =as.factor(flag_T)))
 ### 
 # 9m PAR sensor
 #   1. Read in new raw data at depth (for 2018-2019): PAR_995520_190725_190820_9m.TXT
-PAR.9m <- read.delim("PAR_995520_190725_190820_9m.TXT", header=T, sep = ',')
+PAR.9m <- read.delim(paste0(inputDir,"/2018_2019/PAR/1808_1908_deployment/PAR_995520_190725_190820_9m.TXT"), header=T, sep = ',')
 names(PAR.9m)
 summary(PAR.9m)
 
@@ -236,7 +239,6 @@ PAR.9mm_1$flag_X[ PAR.9mm_1$Acceleration.X > 1.144522 | PAR.9mm_1$Acceleration.X
 PAR.9mm_1$flag_X[ PAR.9mm_1$Acceleration.X <= 1.144522 & PAR.9mm_1$Acceleration.X >=1.111385 ] <- "n"
 
 qplot(timestamp, Acceleration.X, data = PAR.9mm_1, geom="point", color=flag_X) +
-  #scale_x_datetime(date_breaks = "504 hour", labels = date_format("%b %d")) +
   theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0)) 
 
 #   7.QA'QC accelerations:Y 
@@ -319,11 +321,9 @@ summary(PME_PAR_agg19)
 #   5.Plot and color by deployment, depth or flag:
 p <- ggplot(PME_PAR_agg19, aes(x=timestamp, y=(PAR), colour =as.factor(depth))) +
   geom_point(alpha = 0.5) +
-  #stat_smooth(method="lm", se=TRUE, formula=y ~ poly(x, 3, raw=TRUE), alpha=0.15) +
-  scale_x_datetime(date_breaks = "504 hour", labels = date_format("%b %d")) +
   theme_classic() + xlab("Time stamp") + ylab("PAR") 
 
-#write.csv(PME_PAR_agg19, "Summer2019_PME_PAR.csv") 
+#write.csv(PME_PAR_agg19, paste0(outputDir,"Summer2019_PME_PAR.csv")) 
 
 ## ---------------------------
 # VI. End notes:

@@ -12,9 +12,19 @@ library(ggplot2)
 library(dplyr)
 
 ## ---------------------------
+# File path setup:
+if (dir.exists('/Volumes/data/data2/rawarchive/gl4/buoy/')){
+  inputDir<- '/Volumes/data/data2/rawarchive/gl4/buoy/'
+  outputDir<- '/Users/kellyloria/Desktop/' 
+}
+# Don't forget to 
+#     1. Set output path to personal desktop 
+#     2. Physically move final files (pending datamanager approval) into final folder in server
+
+## ---------------------------
 # I. Read in Summer 2018 deployment: 0.4m 
 
-m0.4 <- read.csv("102495_07_03_08_21_2018_0.4m.csv", header=T)
+m0.4 <- read.csv(paste0(inputDir,"2018_2019/RRB/1807_1808_deployment/102495_07_03_08_21_2018_0.4m.csv"), header=T)
 
 #   1. Fix timestamp - so it is no longer a character:
 m0.4$timestamp <- as.POSIXct(m0.4$Time, format="%m/%d/%y %H:%M")
