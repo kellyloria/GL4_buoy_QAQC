@@ -10,6 +10,7 @@
 ## Load packages:
 library(ggplot2)
 library(dplyr)
+library(tidyverse)
 
 ## ---------------------------
 # File path setup:
@@ -24,7 +25,8 @@ if (dir.exists('/Volumes/data/data2/rawarchive/gl4/buoy/')){
 ## ---------------------------
 # I. Read in Summer 2018 deployment: 0.4m 
 
-m0.4 <- read.csv(paste0(inputDir,"2018_2019/RRB/1807_1808_deployment/102495_07_03_08_21_2018_0.4m.csv"), header=T)
+m0.4 <- read.csv(paste0(inputDir,"2018_2019/RRB/1807_1808_deployment/102495_07_03_08_21_2018_0.4m.csv"), 
+                 header=T)
 
 #   1. Fix timestamp - so it is no longer a character:
 m0.4$timestamp <- as.POSIXct(m0.4$Time, format="%m/%d/%y %H:%M")
@@ -63,7 +65,8 @@ qplot(timestamp, Temperature, data = m0.4.2, geom="point", color=flag_Temp) +
 
 ## ---------------------------
 # II. Read in Summer 2018 deployment: 1.5m 
-d1.5m <- read.csv("102496_07_03_08_21_2018_1.5m.csv", header=T)
+d1.5m <- read.csv(paste0(inputDir,"2018_2019/RRB/1807_1808_deployment/102496_07_03_08_21_2018_1.5m.csv"),
+                  header=T)
 
 #   1. Fix timestamp - so it is no longer a character:
 d1.5m$timestamp <- as.POSIXct(d1.5m$Time, format="%m/%d/%y %H:%M")
@@ -97,7 +100,8 @@ qplot(timestamp, Temperature, data = d1.5m.2, geom="point", color=flag_Temp) +
 
 ## ---------------------------
 # III. Read in Summer 2018 deployment: 3m 
-d3m <- read.csv("102497_07_03_08_21_2018_3m.csv", header=T)
+d3m <- read.csv(paste0(inputDir,"2018_2019/RRB/1807_1808_deployment/102497_07_03_08_21_2018_3m.csv"), 
+                header=T)
 
 #   1. Fix timestamp - so it is no longer a character:
 d3m$timestamp <- as.POSIXct(d3m$Time, format="%m/%d/%y %H:%M")
@@ -119,7 +123,7 @@ qplot(timestamp, Temperature, data = d3m_2, geom="point") +
 #   4. Flag outliers temperatures
 temp_mean <- (mean(d3m_2$Temperature)) 
 temp_sd <- (sd(d3m_2$Temperature)) 
-# look for values 4 SD away from mean 
+# look for values 3 SD away from mean 
 temp_cutoff <- (temp_sd*3)
 #find outlier values 
 temp_upL <- (temp_mean + temp_cutoff)
@@ -134,7 +138,8 @@ qplot(timestamp, Temperature, data = d3m_2, geom="point", color=flag_Temp) +
 
 ## ---------------------------
 # IV. Read in Summer 2018 deployment: 5.1m 
-d5.1m <- read.csv("102498_07_03_08_21_2018_5.1m.csv", header=T)
+d5.1m <- read.csv(paste0(inputDir,"2018_2019/RRB/1807_1808_deployment/102498_07_03_08_21_2018_5.1m.csv"), 
+                  header=T)
 
 #   1. Fix timestamp - so it is no longer a character:
 d5.1m$timestamp <- as.POSIXct(d5.1m$Time, format="%m/%d/%y %H:%M")
@@ -164,13 +169,13 @@ d5.1m_2$flag_Temp[ d5.1m_2$Temperature > 14.19813 | d5.1m_2$Temperature < 7.1349
 d5.1m_2$flag_Temp[ d5.1m_2$Temperature <= 14.19813 & d5.1m_2$Temperature >= 7.134998 ] <- "n"
 
 qplot(timestamp, Temperature, data = d5.1m_2, geom="point", color=flag_Temp) +
-  #scale_x_datetime(date_breaks = "504 hour", labels = date_format("%b %d")) +
   theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0)) 
 
 
 ## ---------------------------
 # V. Read in Summer 2018 deployment: 7.5m 
-d7.5m <- read.csv("102499_07_03_08_21_2018_7.5m.csv", header=T)
+d7.5m <- read.csv(paste0(inputDir,"2018_2019/RRB/1807_1808_deployment/102499_07_03_08_21_2018_7.5m.csv"), 
+                  header=T)
 
 #   1. Fix timestamp - so it is no longer a character:
 d7.5m$timestamp <- as.POSIXct(d7.5m$Time, format="%m/%d/%y %H:%M")
@@ -190,12 +195,12 @@ qplot(timestamp, Temperature, data = d7.5m_2, geom="point") +
 d7.5m_2$flag_Temp <- "n"
 
 qplot(timestamp, Temperature, data = d7.5m_2, geom="point", color=flag_Temp) +
-  #scale_x_datetime(date_breaks = "504 hour", labels = date_format("%b %d")) +
   theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0)) 
 
 ## ---------------------------
 # VI. Read in Summer 2018 deployment: 10m 
-d10m <- read.csv("102500_07_03_08_21_2018_10m.csv", header=T)
+d10m <- read.csv(paste0(inputDir,"2018_2019/RRB/1807_1808_deployment/102500_07_03_08_21_2018_10m.csv"), 
+                 header=T)
 
 #   1. Fix timestamp - so it is no longer a character:
 d10m$timestamp <- as.POSIXct(d10m$Time, format="%m/%d/%y %H:%M")
@@ -207,7 +212,6 @@ d10m_2 <- subset(d10m,timestamp >= as.POSIXct('2018-07-03 13:00:00') &
 range(d10m_2$timestamp)
 
 qplot(timestamp, Temperature, data = d10m_2, geom="point", ylab = "Temperature [C]") +
-  scale_x_datetime(date_breaks = "72 hour", labels = date_format("%b %d")) +
   theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0))
 
 ###
@@ -224,13 +228,13 @@ d10m_2$flag_Temp[ d10m_2$Temperature > 12.03469 | d10m_2$Temperature < 3.831558 
 d10m_2$flag_Temp[ d10m_2$Temperature <= 12.03469 & d10m_2$Temperature >= 3.831558 ] <- "n"
 
 qplot(timestamp, Temperature, data = d10m_2, geom="point", color=flag_Temp) +
-  #scale_x_datetime(date_breaks = "504 hour", labels = date_format("%b %d")) +
   theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0)) 
 
 
 ## ---------------------------
 # VII. Read in Summer 2018 deployment: 11.5m 
-dll.5m <- read.csv("102501_07_03_08_21_2018_11.5m.csv", header=T)
+dll.5m <- read.csv(paste0(inputDir,"2018_2019/RRB/1807_1808_deployment/102501_07_03_08_21_2018_11.5m.csv"), 
+                   header=T)
 
 #   1. Fix timestamp - so it is no longer a character:
 dll.5m$timestamp <- as.POSIXct(dll.5m$Time, format="%m/%d/%y %H:%M")
@@ -242,7 +246,6 @@ dll.5m_2 <- subset(dll.5m,timestamp >= as.POSIXct('2018-07-03 13:00:00') &
 range(dll.5m$timestamp)
 
 qplot(timestamp, Temperature, data = dll.5m_2, geom="point", ylab = "Temperature [C]") +
-  scale_x_datetime(date_breaks = "72 hour", labels = date_format("%b %d")) +
   theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0))
 
 ###
@@ -259,12 +262,12 @@ dll.5m_2$flag_Temp[ dll.5m_2$Temperature > 11.52138 | dll.5m_2$Temperature < 2.9
 dll.5m_2$flag_Temp[ dll.5m_2$Temperature <= 11.52138 & dll.5m_2$Temperature >= 2.937595 ] <- "n"
 
 qplot(timestamp, Temperature, data = dll.5m_2, geom="point", color=flag_Temp) +
-  #scale_x_datetime(date_breaks = "504 hour", labels = date_format("%b %d")) +
   theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0)) 
 
 ## ---------------------------
 # VIII. Read in Summer 2018 deployment: 6.5m 
-d6.5m <- read.csv("102502_07_03_08_21_2018_6.4m.csv", header=T)
+d6.5m <- read.csv(paste0(inputDir,"2018_2019/RRB/1807_1808_deployment/102502_07_03_08_21_2018_6.4m.csv"), 
+                  header=T)
 
 #   1. Fix timestamp - so it is no longer a character:
 d6.5m$timestamp <- as.POSIXct(d6.5m$Time, format="%m/%d/%y %H:%M")
@@ -276,7 +279,6 @@ d6.5m_2 <- subset(d6.5m,timestamp >= as.POSIXct('2018-07-03 13:00:00') &
 range(d6.5m_2$timestamp)
 
 qplot(timestamp, Temperature, data = d6.5m_2, geom="point", ylab = "Temperature [C]") +
-  scale_x_datetime(date_breaks = "72 hour", labels = date_format("%b %d")) +
   theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0))
 
 ###
@@ -293,7 +295,6 @@ d6.5m_2$flag_Temp[ d6.5m_2$Temperature > 15.38964 | d6.5m_2$Temperature < 5.2296
 d6.5m_2$flag_Temp[ d6.5m_2$Temperature <= 15.38964 & d6.5m_2$Temperature >= 5.229635 ] <- "n"
 
 qplot(timestamp, Temperature, data = d6.5m_2, geom="point", color=flag_Temp) +
-  #scale_x_datetime(date_breaks = "504 hour", labels = date_format("%b %d")) +
   theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0)) 
 
 ## ---------------------------
@@ -321,13 +322,12 @@ rbr_dat$deployment <- "Summer2018"
 #   4. fix column order
 rbr_dat_exp <- subset(rbr_dat, select=c(Sensor, deployment, year, timestamp, Depth, Temperature, flag_Temp))
 summary(rbr_dat_exp)
-# write.csv(rbr_dat_exp, "Summer2018_RBR.csv") # complied data file of all RBR temp sensors along buoy line 
+# write.csv(rbr_dat_exp, paste0(outputDir,"Summer2018_RBR.csv")) # complied data file of all RBR temp sensors along buoy line 
 
 # Check to make sure all sensors + data are there
 names(rbr_dat)
 Summer2018_RBR <- qplot(timestamp, Temperature, data = rbr_dat, geom="point", ylab = "Temperature [C]",
-                        color = factor(Depth)) +
-  scale_x_datetime(date_breaks = "72 hour", labels = date_format("%b %d")) +
+                        color = factor(Depth), shape= flag_Temp) +
   theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0)) + theme_classic()
 #ggsave("Summer2018_RBR.pdf", Summer2018_RBR, scale = 2, width = 15, height = 5, units = c("cm"), dpi = 500)
 
