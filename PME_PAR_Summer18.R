@@ -12,8 +12,18 @@ library(ggplot2)
 library(dplyr)
 
 ## ---------------------------
+# File path setup:
+if (dir.exists('/Volumes/data/data2/rawarchive/gl4/buoy/')){
+  inputDir<- '/Volumes/data/data2/rawarchive/gl4/buoy/'
+  outputDir<- '/Users/kellyloria/Desktop/' 
+}
+# Don't forget to 
+#     1. Set output path to personal desktop 
+#     2. Physically move final files (pending datamanager approval) into final folder in server
+
+## ---------------------------
 # I. Read in Summer 2018 deployment
-d <- read.csv("PAR_07_03_08_21_2018_corrected.csv", header=T)
+d <- read.csv(paste0(inputDir,"/2018_2019/PAR/1807_1808_deployment/PAR_07_03_08_21_2018_9m.csv"), header=T)
 names(d)
 #   1. Fix timestamp - so it is no longer a character:
 d$timestamp <- as.POSIXct(d$Mountain.Standard.Time, format="%Y-%m-%d %H:%M:%OS")
@@ -48,7 +58,6 @@ d3$flag_Y[ d3$Acceleration.Y > -0.01585714 | d3$Acceleration.Y < -0.1599153 ] <-
 d3$flag_Y[ d3$Acceleration.Y <= -0.01585714 & d3$Acceleration.Y >= -0.1599153 ] <- "n"
 
 qplot(timestamp, Acceleration.Y, data = d3, geom="point", color=flag_Y) +
-  #scale_x_datetime(date_breaks = "504 hour", labels = date_format("%b %d")) +
   theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0)) 
 
 #   6. QA'QC accelerations:Z
@@ -80,7 +89,6 @@ d3$flag_X[ d3$Acceleration.X > 1.157674 | d3$Acceleration.X < 1.111905 ] <- "o"
 d3$flag_X[ d3$Acceleration.X <= 1.157674 & d3$Acceleration.X >=1.111905 ] <- "n"
 
 qplot(timestamp, Acceleration.X, data = d3, geom="point", color=flag_X) +
-  #scale_x_datetime(date_breaks = "504 hour", labels = date_format("%b %d")) +
   theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0)) 
 
 #   8. QA'QC accelerations:tilt
@@ -96,7 +104,6 @@ d3$flag_T[ d3$tilt > -1.430497 | d3$tilt < -1.55657 ] <- "o"
 d3$flag_T[ d3$tilt <= -1.430497 & d3$tilt >=-1.55657 ] <- "n"
 
 qplot(timestamp, tilt, data = d3, geom="point", color=flag_T) +
-  #scale_x_datetime(date_breaks = "504 hour", labels = date_format("%b %d")) +
   theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0)) 
 
 #   9. Add in column for depth, deployment and sensor 
@@ -108,7 +115,7 @@ PME_PAR_summer18 <- subset(d3, select=c(Sensor, deployment, year, timestamp, dep
                                        PAR, Acceleration.X, Acceleration.Y, Acceleration.Z, tilt, Battery, flag_Y, 
                                        flag_Z, flag_X, flag_T))
 summary(PME_PAR_summer18)
-#write.csv(PME_PAR_summer18, "Summer2018_PME_PAR.csv") # complied data file of all RBR temp sensors along buoy line
+#write.csv(PME_PAR_summer18, paste0(outputDir,"Summer2018_PME_PAR.csv")) # complied data file of all RBR temp sensors along buoy line
 
 ## ---------------------------
 # II. End notes:

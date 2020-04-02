@@ -12,8 +12,19 @@ library(ggplot2)
 library(dplyr)
 
 ## ---------------------------
+# File path setup:
+if (dir.exists('/Volumes/data/data2/rawarchive/gl4/buoy/')){
+  inputDir<- '/Volumes/data/data2/rawarchive/gl4/buoy/'
+  outputDir<- '/Users/kellyloria/Desktop/' 
+}
+
+# Don't forget to 
+#     1. Set output path to personal desktop 
+#     2. Physically move final files (pending datamanager approval) into final folder in server
+
+## ---------------------------
 # I. Read in Summer 2018 deployment data: 1.5m DO data
-d1.5m <- read.csv("DO_1.5m.csv", header=T)
+d1.5m <- read.csv(paste0(inputDir,"/2018_2019/DO/1807_1808_deployment/DO_1.5m.csv"), header=T)
 names(d1.5m)
 
 #   1. Fix timestamp - so it is no longer a character:
@@ -70,8 +81,8 @@ qplot(timestamp, Dissolved.Oxygen, data = d1.5m, geom="point", color=flag_DO) +
 
 ## ---------------------------
 # II. Read in Summer 2018 deployment data: 9m DO data
-d9m <- read.csv("DO_9m.csv", header=T)
-names(d)
+d9m <- read.csv(paste0(inputDir,"/2018_2019/DO/1807_1808_deployment/DO_9m.csv"), header=T)
+names(d9m)
 
 #   1. Fix timestamp - so it is no longer a character:
 d9m$timestamp <- as.POSIXct(d9m$Mountain.Standard.Time, format="%Y-%m-%d %H:%M:%OS")
@@ -127,7 +138,7 @@ qplot(timestamp, Dissolved.Oxygen, data = d9m_2, geom="point", color=flag_Temp) 
 
 ## ---------------------------
 # III. Read in Summer 2018 deployment data: 11m DO data
-d11.5m <- read.csv("DO_11.5m.csv", header=T)
+d11.5m <- read.csv(paste0(inputDir,"/2018_2019/DO/1807_1808_deployment/DO_11.5m.csv"), header=T)
 names(d11.5m)
 
 #   1. Fix timestamp - so it is no longer a character:
@@ -202,7 +213,7 @@ colnames(PME_DO_dat_exp)[7] = "DO"
 colnames(PME_DO_dat_exp)[8] = "DO_saturation"
 colnames(PME_DO_dat_exp)[9] = "battery"
 
-#write.csv(PME_DO_dat_exp, "Summer2018_PME_DO.csv") # complied data file of all DO sensors along buoy line
+#write.csv(PME_DO_dat_exp, paste0(outputDir,"Summer2018_PME_DO.csv")) # complied data file of all DO sensors along buoy line
 
 #   4. Check to make sure all sensors + data are there
 Summer2018_DO <- qplot(timestamp, Dissolved.Oxygen.Saturation, data = PME_DO_dat_exp, geom="point", ylab = "DO saturation", color = factor(Depth)) +
