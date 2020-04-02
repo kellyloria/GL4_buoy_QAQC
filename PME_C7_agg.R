@@ -201,7 +201,6 @@ summary(PME_C7_agg18)
 p <- ggplot(PME_C7_agg18, aes(x=timestamp1, y=(chlora20), colour =as.factor(flag_RE))) + # can swap color for deployment too 
   geom_point(alpha = 0.5) +
   #stat_smooth(method="lm", se=TRUE, formula=y ~ poly(x, 3, raw=TRUE), alpha=0.15) +
-  scale_x_datetime(date_breaks = "504 hour", labels = date_format("%b %d")) +
   theme_classic() + xlab("Time stamp") 
 
 
@@ -278,7 +277,7 @@ names(PME_C7_summer2019)
 
 # 2. Select for relevant parameters
 PME_C7_summer2019_1 <- subset(PME_C7_summer2019, select=c(sensor, deployment, year, timestamp1, depth,
-                                                      Temperature, sensor, Gain, chlora20,
+                                                      Temperature, Sensor, Gain, chlora20,
                                                       Battery, flag_RE))
 
 # 3. change names
@@ -292,7 +291,7 @@ PME_C7_agg19 <- rbind(PME_C7_agg18, PME_C7_summer2019_1)
 summary(PME_C7_agg19)
 
 # 5. Plot and facet by deployment:
-p <- ggplot(PME_C7_agg19, aes(x=timestamp1, y=(chlora20), colour =as.factor(depth))) +
+p <- ggplot(PME_C7_agg19, aes(x=timestamp1, y=(C7_output), colour =as.factor(depth))) +
   geom_point(alpha = 0.5)  +
   theme_classic() + xlab("Time stamp") 
 
