@@ -3,6 +3,9 @@ The buoy is deploed in GL4 as a part of Niwot Ridge Long Term Ecological Researc
 
 The buoy is instramented with 8 invidual RBR sensors that measure temperature, 3 PME sensors that measure dissloved oxygen, 1 PME sensor that uses a Li-COR quantum sensor to measure photosynthetically active radiation, and 1 PME C7 sensor to opically measure chlorophyll concentration. 
 
+# Workflow:
+All scripts read in raw data from the Niwot LTER Server so initial file paths for inputDir and outputDir need to be modified for each user. For file output don't forget to move final files (pending datamanager approval) into final folder in server.
+
 # Explaination of scripts:
   All original scripts from 2018 are labeled with "_Summer18"
   
