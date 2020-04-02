@@ -51,12 +51,12 @@ range(PAR.3m$timestamp1)
 summary(PAR.3m) 
 
 #   4. Calculate an estimate of tilt:
-PAR.3m$tilt <- atan(PAR.3m$Acceleration.X/PAR.3m$Acceleration.Y)
-hist(PAR.3m$tilt)
-summary(PAR.3m$tilt) # positive tilt values are likely out of range
+PAR.3m$tilt.y <- (180/pi)*atan(PAR.3m$Acceleration.X/sqrt((PAR.3m$Acceleration.Y)^2 + (PAR.3m$Acceleration.Y)^2))
+hist(PAR.3m$tilt.y)
+summary(PAR.3m$tilt.y) 
 
 #   5. Check out the data pre-flagging:
-qplot(timestamp1, tilt, data = PAR.3m, geom="point") +
+qplot(timestamp1, tilt.y, data = PAR.3m, geom="point") +
   theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0)) 
 
 qplot(timestamp1, Acceleration.Y, data = PAR.3m, geom="point")  +
@@ -128,18 +128,18 @@ qplot(timestamp1, Acceleration.X, data = PAR.3m, geom="point", color=flag_X) +
   theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0)) 
 
 #   10. QA'QC accelerations:tilt
-A.t_mean <- (mean(PAR.3m$tilt)) #-1.505361
-A.t_sd <- (sd(PAR.3m$tilt)) #0.2321761
+A.t_mean <- (mean(PAR.3m$tilt.y)) # 86.24698
+A.t_sd <- (sd(PAR.3m$tilt.y)) #1.237723
 # look for values 3 SD away from mean 
 A.t_cutoff <- (A.t_sd*3)
 #find outlier values 
 A.t_upL <- (A.t_mean + A.t_cutoff)
 A.t_lowL <- (A.t_mean - A.t_cutoff)
 # Apply flag: flag_T
-PAR.3m$flag_T[ PAR.3m$tilt > -0.8088324 | PAR.3m$tilt < -2.201889 ] <- "o"
-PAR.3m$flag_T[ PAR.3m$tilt <= -0.8088324 & PAR.3m$tilt >=-2.201889 ] <- "n"
+PAR.3m$flag_T[ PAR.3m$tilt.y > 95 | PAR.3m$tilt.y < 82.53381 ] <- "o"
+PAR.3m$flag_T[ PAR.3m$tilt.y <= 95 & PAR.3m$tilt.y >= 82.53381 ] <- "n"
 
-qplot(timestamp1, tilt, data = PAR.3m, geom="point", color=flag_T) +
+qplot(timestamp1, tilt.y, data = PAR.3m, geom="point", color=flag_T) +
   #scale_x_datetime(date_breaks = "504 hour", labels = date_format("%b %d")) +
   theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0)) 
 
@@ -158,7 +158,7 @@ PME_PAR_winter18 <- transform(PAR.3m,
 #   2.select for relevant parameters from "old data"
 old.datPAR <- subset(old.datPAR, select=c(Sensor, deployment, year, timestamp1, depth,
                                           Temperature, PAR, Acceleration.X, Acceleration.Y,
-                                          Acceleration.Z, tilt, Battery, flag_X, 
+                                          Acceleration.Z, tilt.y, Battery, flag_X, 
                                           flag_Y, flag_Z, flag_T))
 #   3.fix names in old data:
 colnames(old.datPAR)[1] = "sensor"
@@ -166,7 +166,7 @@ colnames(old.datPAR)[1] = "sensor"
 #   4.select for relevant parameters from Winter2018 data
 PME_PAR_winter18 <- subset(PME_PAR_winter18, select=c(sensor, deployment, year, timestamp1, depth,
                                                     Temperature, PAR, Acceleration.X, Acceleration.Y,
-                                                    Acceleration.Z, tilt, Battery, flag_X, 
+                                                    Acceleration.Z, tilt.y, Battery, flag_X, 
                                                     flag_Y, flag_Z, flag_T))
 
 #   5. Add winter 2018 to summer 2018
@@ -214,9 +214,11 @@ range(PAR.9m$timestamp)
 PAR.9mm_1 <- rbind(PAR.9ma, PAR.9mb)
 
 #   4. Calculate an estimate of tilt:
-PAR.9mm_1$tilt <- atan(PAR.9mm_1$Acceleration.X/PAR.9mm_1$Acceleration.Y)
-hist(PAR.9mm_1$tilt)
-qplot(timestamp, Acceleration.Y, data = PAR.9mm_1, geom="point") +
+PAR.9mm_1$tilt.y <- (180/pi)*atan(PAR.9mm_1$Acceleration.X/sqrt((PAR.9mm_1$Acceleration.Y)^2 + (PAR.9mm_1$Acceleration.Y)^2))
+hist(PAR.9mm_1$tilt.y)
+summary(PAR.9mm_1$tilt.y) 
+
+qplot(timestamp, tilt.y, data = PAR.9mm_1, geom="point") +
   #scale_x_datetime(date_breaks = "504 hour", labels = date_format("%b %d")) +
   theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0)) 
 
@@ -274,18 +276,18 @@ qplot(timestamp, Acceleration.Z, data = PAR.9mm_1, geom="point", color=flag_Z) +
   theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0)) 
 
 #   9.QA'QC accelerations:tilt
-A.t_mean <- (mean(PAR.9mm_1$tilt)) #-1.505361
-A.t_sd <- (sd(PAR.9mm_1$tilt)) #0.2321761
+A.t_mean <- (mean(PAR.9mm_1$tilt.y)) #86.79434
+A.t_sd <- (sd(PAR.9mm_1$tilt.y)) #1.216882
 # look for values 3 SD away from mean 
 A.t_cutoff <- (A.t_sd*3)
 #find outlier values 
 A.t_upL <- (A.t_mean + A.t_cutoff)
 A.t_lowL <- (A.t_mean - A.t_cutoff)
 # Apply flag: flag_Y
-PAR.9mm_1$flag_T[ PAR.9mm_1$tilt >  -1.430497 | PAR.9mm_1$tilt < -1.55657 ] <- "o"
-PAR.9mm_1$flag_T[ PAR.9mm_1$tilt <=  -1.430497 & PAR.9mm_1$tilt >= -1.55657 ] <- "n"
+PAR.9mm_1$flag_T[ PAR.9mm_1$tilt.y > 92 | PAR.9mm_1$tilt.y < 83.14369 ] <- "o"
+PAR.9mm_1$flag_T[ PAR.9mm_1$tilt.y <= 92 & PAR.9mm_1$tilt.y >= 83.14369 ] <- "n"
 
-qplot(timestamp, tilt, data = PAR.9mm_1, geom="point", color=flag_Y) +
+qplot(timestamp, tilt.y, data = PAR.9mm_1, geom="point", color=flag_T) +
   #scale_x_datetime(date_breaks = "504 hour", labels = date_format("%b %d")) +
   theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0)) 
 
@@ -305,21 +307,24 @@ PME_PAR_summer2019 <- transform(PAR.9mm_1,
 #   2.select for relevant parameters
 PME_PAR_summer2019 <- subset(PME_PAR_summer2019, select=c(sensor, deployment, year, timestamp, depth,
                                                       Temperature, PAR, Acceleration.X, Acceleration.Y,
-                                                      Acceleration.Z, tilt, Battery, flag_X, 
+                                                      Acceleration.Z, tilt.y, Battery, flag_X, 
                                                       flag_Y, flag_Z, flag_T))
+names(PME_PAR_agg18)
 #   3. change names
 colnames(PME_PAR_summer2019)[6] = "temperature"
 colnames(PME_PAR_summer2019)[8] = "acceleration.X"
 colnames(PME_PAR_summer2019)[9] = "acceleration.Y"
 colnames(PME_PAR_summer2019)[10] = "acceleration.Z"
-colnames(PME_PAR_summer2019)[11] = "battery"
+colnames(PME_PAR_summer2019)[12] = "battery"
+
+names(PME_PAR_summer2019)
 
 #   4. Add winter 2018 to summer 2018
 PME_PAR_agg19 <- rbind(PME_PAR_agg18, PME_PAR_summer2019)
 summary(PME_PAR_agg19)
 
 #   5.Plot and color by deployment, depth or flag:
-p <- ggplot(PME_PAR_agg19, aes(x=timestamp, y=(PAR), colour =as.factor(depth))) +
+p <- ggplot(PME_PAR_agg19, aes(x=timestamp, y=(PAR), colour =as.factor(flag_T))) +
   geom_point(alpha = 0.5) +
   theme_classic() + xlab("Time stamp") + ylab("PAR") 
 

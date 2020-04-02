@@ -35,9 +35,8 @@ d2 <- subset(d,timestamp >= as.POSIXct('2018-07-03 13:00:00') &
 range(d2$timestamp)
 
 #   3. Calculate an estimate of tilt:
-d2$tilt <- atan(d2$Acceleration.X/d2$Acceleration.Y)
-hist(d2$tilt) 
-summary(d2)
+d2$tilt.y <- (180/pi)*atan(d2$Acceleration.X/sqrt((d2$Acceleration.Y)^2 + (d2$Acceleration.Y)^2))
+hist(d2$tilt.y)
 
 #   4. Restrict for negative values of PAR
 d3 <- subset(d2, PAR >= 0)
@@ -92,18 +91,18 @@ qplot(timestamp, Acceleration.X, data = d3, geom="point", color=flag_X) +
   theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0)) 
 
 #   8. QA'QC accelerations:tilt
-A.t_mean <- (mean(d3$tilt))
-A.t_sd <- (sd(d3$tilt))
+A.t_mean <- (mean(d3$tilt.y))
+A.t_sd <- (sd(d3$tilt.y))
 # look for values 3 SD away from mean 
 A.t_cutoff <- (A.t_sd*3)
 #find outlier values 
 A.t_upL <- (A.t_mean + A.t_cutoff)
 A.t_lowL <- (A.t_mean - A.t_cutoff)
 # Apply flag: flag_T
-d3$flag_T[ d3$tilt > -1.430497 | d3$tilt < -1.55657 ] <- "o"
-d3$flag_T[ d3$tilt <= -1.430497 & d3$tilt >=-1.55657 ] <- "n"
+d3$flag_T[ d3$tilt.y > 92 | d3$tilt.y < 78.69312 ] <- "o"
+d3$flag_T[ d3$tilt.y <= 92 & d3$tilt.y >=78.69312 ] <- "n"
 
-qplot(timestamp, tilt, data = d3, geom="point", color=flag_T) +
+qplot(timestamp, tilt.y, data = d3, geom="point", color=flag_T) +
   theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0)) 
 
 #   9. Add in column for depth, deployment and sensor 
@@ -112,7 +111,7 @@ d3$year <- 2018
 
 #   10. Select for relevant parameters
 PME_PAR_summer18 <- subset(d3, select=c(Sensor, deployment, year, timestamp, depth, Temperature,
-                                       PAR, Acceleration.X, Acceleration.Y, Acceleration.Z, tilt, Battery, flag_Y, 
+                                       PAR, Acceleration.X, Acceleration.Y, Acceleration.Z, tilt.y, Battery, flag_Y, 
                                        flag_Z, flag_X, flag_T))
 summary(PME_PAR_summer18)
 #write.csv(PME_PAR_summer18, paste0(outputDir,"Summer2018_PME_PAR.csv")) # complied data file of all RBR temp sensors along buoy line
