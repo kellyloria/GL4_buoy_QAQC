@@ -11,7 +11,7 @@ All scripts read in raw data from the Niwot LTER Server so initial file paths fo
   
   All current scripts in which ongoing sensor QA'QC can take place are labeled with "_agg"
   
-# File naming:
+# File names:
 All raw data files are named with the sensor measurement (DO, PAR, C7, Temp), the sensor serial number, the deployment date range (07_03_08_21_2018, means July 3th 2018 to August 21st 2018) and deployment depth in meter. 
 
 QA'Qced scripts are named as deployment season and sensor type. So Summer19_PME_DO.csv has all of the QA'QC ed data from the 3 sensors aggregated from all deployments up until summer 2019. 
