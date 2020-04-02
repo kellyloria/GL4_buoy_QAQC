@@ -16,3 +16,5 @@ All raw data files are named with the sensor measurement (DO, PAR, C7, Temp), th
 
 QA'Qced scripts are named as deployment season and sensor type. So Summer19_PME_DO.csv has all of the QA'QC ed data from the 3 sensors aggregated from all deployments up until summer 2019. 
 
+# Flagging codes:
+n = no flag; m = missing; q = questionable; e = estimated; o = outlier
