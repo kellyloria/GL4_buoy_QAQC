@@ -85,9 +85,10 @@ p <- ggplot(sum18comp, aes(x=chl_a, y=C7_output)) +
 # 6. Get a beta value for the relationship between chl-a values and C7 values
 sum18comp.mod <- lmer(chl_a ~ C7_output + (1|depth.y), data=sum18comp)
 summary(sum18comp.mod)
+ranef(sum18comp.mod) # get intercept for random effect for same depth as sensor deployment 
 
 # 7. Transfor output for chl-a beta estimate
-old.datC7$chlora20 <- (old.datC7$chlora * 0.07877)
+old.datC7$chlora20 <- (old.datC7$chlora * 0.07877 + 6.86848)
 
 qplot(timestamp1, chlora20, data = old.datC7, geom="point") +
   #scale_x_datetime(date_breaks = "504 hour", labels = date_format("%b %d")) +
@@ -126,7 +127,9 @@ qplot(timestamp1, Sensor, data = C7.3m, geom="point") +
   theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0))
 
 # 5. Compare C7 output with chl-a extraction values. 
-#       Need to extract just dates from timestamps and then restrict for morining sampling 
+#       Need to extract just dates from timestamps and then restrict for morining sampling and
+#       add in variable for depth
+#C7.3m$depth <- 3
 C7.3m <- transform(C7.3m, ndate = as.Date(timestamp1))
 C7.3m$time <- (strftime(C7.3m$timestamp1,"%H:%M:%OS"))
 C7.3m.1 <- with(C7.3m, C7.3m[hour(timestamp1)>= 9 & hour(timestamp1) < 13 , ] )
@@ -149,13 +152,14 @@ p <- ggplot(win18comp, aes(x=chl_a, y=Sensor)) +
   stat_smooth(method ="lm") +
   theme_classic()  
 
-
 # 8. Get a beta value for the relationship between chl-a values and C7 values
-win18comp.mod <- lm(chl_a ~ Sensor, data=win18comp)
+win18comp.mod <- glm(chl_a ~ Sensor, data=win18comp)
 summary(win18comp.mod)
+ranef(win18comp.mod) # get intercept for random effect for same depth as sensor deployment 
+
 
 # 9. Transfor output for chl-a estimate
-C7.3m$chlora20 <- (C7.3m$Sensor * 0.018453)
+C7.3m$chlora20 <- ((C7.3m$Sensor * 0.018453) + 5.877161)
 
 # 10. Plot transformed data
 qplot(timestamp1, chlora20, data = C7.3m, geom="point") +
@@ -249,7 +253,7 @@ sum19comp.mod <- lmer(chl_a ~ Sensor + (1|depth), data=sum19comp)
 summary(sum19comp.mod)
 
 # 9. Transfor output for chl-a estimate
-C7.9m$chlora20 <- (C7.9m$Sensor * 0.011536)
+C7.9m$chlora20 <- (C7.9m$Sensor * 0.011536 + 0.131639)
 
 # 10. Plot transformed data
 qplot(timestamp1, chlora20, data = C7.9m, geom="point") +
@@ -291,7 +295,7 @@ PME_C7_agg19 <- rbind(PME_C7_agg18, PME_C7_summer2019_1)
 summary(PME_C7_agg19)
 
 # 5. Plot and facet by deployment:
-p <- ggplot(PME_C7_agg19, aes(x=timestamp1, y=(C7_output), colour =as.factor(depth))) +
+p <- ggplot(PME_C7_agg19, aes(x=timestamp1, y=(est.chl_a), colour =as.factor(depth))) +
   geom_point(alpha = 0.5)  +
   theme_classic() + xlab("Time stamp") 
 
