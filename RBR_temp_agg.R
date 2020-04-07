@@ -194,7 +194,6 @@ summary(RBR_temp_winter18)
 #   2. Add in year 
 RBR_temp_winter18 <- transform(RBR_temp_winter18,
                              year = as.numeric(format(timestamp1, '%Y')))
-RBR_temp_winter18$flag_Temp <- "n"
 
 #   3. Select for relevant parameters
 RBR_temp_winter18 <- subset(RBR_temp_winter18, select=c(sensor, deployment, year, timestamp1, depth,
@@ -490,12 +489,26 @@ colnames(RBR_temp_summer19)[6] = "temperature"
 RBR_temp_agg19 <- rbind(RBR_temp_agg18, RBR_temp_summer19)
 summary(RBR_temp_agg19)
 
-# Plot and facet by deployment:
-p <- ggplot(RBR_temp_agg19, aes(x=timestamp, y=(temperature), 
-                                colour =(depth), shape=flag_Temp)) +
-  geom_point(alpha = 0.5) + theme_classic() 
+## ---------------------------
+# XV. Final QA'QC for temperature
 
-# write.csv(RBR_temp_agg19,  paste0(outputDir,"Summer2019_RBR_Temp.csv")) # complied data file of all RBR sensors along buoy line
+# 1. Flag temperature values:
+RBR_temp_agg19.Q=RBR_temp_agg19%>%
+  mutate(hour=lubridate::hour(timestamp))%>%
+  arrange(deployment, depth, timestamp)%>%
+  group_by(deployment, depth, hour)%>%
+  mutate(mnT=rollapply(temperature, width = 20, FUN = mean, fill=NA),
+         sdT=rollapply(temperature, width = 20, FUN = sd, fill=NA)) %>%
+  mutate(loT=mnT- (3*sdT), hiT=mnT+ (3*sdT))%>%
+  full_join(., RBR_temp_agg19)%>%
+  mutate(flagT=ifelse((temperature<loT&!is.na(loT))|(temperature>hiT&!is.na(hiT)), 'o', 'n'))
+
+# Plot and facet by deployment:
+p <- ggplot(RBR_temp_agg19.Q, aes(x=timestamp, y=(temperature), 
+                                colour =(depth), shape=flagT)) +
+  geom_point(alpha = 0.5) + theme_classic() + facet_wrap(~flagT)
+
+# write.csv(RBR_temp_agg19.Q,  paste0(outputDir,"Summer2019_RBR_Temp.csv")) # complied data file of all RBR sensors along buoy line
 
 ## ---------------------------
 # VI. End notes:

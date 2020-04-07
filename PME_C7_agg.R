@@ -11,6 +11,8 @@
 library(ggplot2)
 library(dplyr)
 library(lubridate)
+library(tidyverse)
+library(zoo)
 
 ## ---------------------------
 # File path setup:
@@ -37,10 +39,6 @@ names(chla1819)
 chla1819$ndate <- as.Date(as.Date.character(chla1819$date, format="%Y-%m-%d"))
 range(chla1819$ndate)
 
-chla1819$timestamp1 <- as.POSIXct(chla1819$timestamp, format= "%Y-%m-%d %H:%M:%OS")
-range(chla1819$timestamp1)
-
-
 ## ---------------------------
 # II. Summer 2018 deployment
 old.datC7 <- read.csv(paste0(inputDir, "2018_2019/C7/1808_1907_deployment/gl4.buoy.PMEC7.data.csv"), header=T)
@@ -55,10 +53,6 @@ qplot(timestamp1, C7_output, data = old.datC7, geom="point") +
   #scale_x_datetime(date_breaks = "504 hour", labels = date_format("%b %d")) +
   theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0)) 
 
-qplot(timestamp1, chlora, data = old.datC7, geom="point") +
-  #scale_x_datetime(date_breaks = "504 hour", labels = date_format("%b %d")) +
-  theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0)) 
-
 # 3. Compare C7 output with chl-a extraction values. 
 #       Need to extract just dates from timestamps and then restrict for morining sampling
 old.datC7 <- transform(old.datC7, ndate = as.Date(timestamp1))
@@ -67,7 +61,7 @@ old.datC7.1 <- with(old.datC7, old.datC7[hour(timestamp1)>= 9 & hour(timestamp1)
 
 # 4. Combine C7 output and chl-a extractions
 sum18comp <- left_join(old.datC7.1, chla1819[c("ndate", "depth","chl_a")],
-                  by = c("ndate" = "ndate"))
+                       by = c("ndate" = "ndate"))
 summary(sum18comp)
 
 # 5. Plot the new combined data
@@ -91,15 +85,6 @@ ranef(sum18comp.mod) # get intercept for random effect for same depth as sensor 
 old.datC7$chlora20 <- (old.datC7$chlora * 0.07877 + 6.86848)
 
 qplot(timestamp1, chlora20, data = old.datC7, geom="point") +
-  #scale_x_datetime(date_breaks = "504 hour", labels = date_format("%b %d")) +
-  theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0)) 
-
-# 8. The data pre-July 29st looks poor and should be flagged 
-old.datC7$flag_RE[old.datC7$timestamp1 <= as.POSIXct('2018-07-29 00:00:00')] <- "q"
-old.datC7$flag_RE[old.datC7$timestamp1 >= as.POSIXct('2018-07-29 00:00:00')] <- "n"
-
-# 9. Check to see if data was appropriately flagged:
-qplot(timestamp1, chlora20, data = old.datC7, geom="point", color=flag_RE) +
   #scale_x_datetime(date_breaks = "504 hour", labels = date_format("%b %d")) +
   theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0)) 
 
@@ -155,8 +140,6 @@ p <- ggplot(win18comp, aes(x=chl_a, y=Sensor)) +
 # 8. Get a beta value for the relationship between chl-a values and C7 values
 win18comp.mod <- glm(chl_a ~ Sensor, data=win18comp)
 summary(win18comp.mod)
-ranef(win18comp.mod) # get intercept for random effect for same depth as sensor deployment 
-
 
 # 9. Transfor output for chl-a estimate
 C7.3m$chlora20 <- ((C7.3m$Sensor * 0.018453) + 5.877161)
@@ -171,26 +154,22 @@ C7.3m$depth <- 3
 C7.3m$deployment <- "Winter2018"
 C7.3m$sensor <- 240115
 
-# 12. Add in variable for flag:
-C7.3m$flag_RE[C7.3m$timestamp1 >= as.POSIXct('2018-08-24 13:00:00') ] <- "n"
-
-
 ## ---------------------------
 # IV Combine Summer2018 + Winter2018 data
 
 # 1. Add in column for year 
 PME_C7_winter18 <- transform(C7.3m,
-                              year = as.numeric(format(timestamp1, '%Y')))
+                             year = as.numeric(format(timestamp1, '%Y')))
 
 # 2. Select for relevant parameters
 old.datC7_1 <- subset(old.datC7, select=c(sensor, deployment, year, timestamp1, depth,
                                           temperature, C7_output, gain, chlora20,
-                                          battery, flag_RE))
+                                          battery))
 
 # 3. Select for relevant parameters
 PME_C7_winter18_1 <- subset(PME_C7_winter18, select=c(sensor, deployment, year, timestamp1, depth,
                                                       Temperature, Sensor, Gain, chlora20,
-                                                      Battery, flag_RE))
+                                                      Battery))
 # 4. Change names of column to match data
 colnames(PME_C7_winter18_1)[6] = "temperature"
 colnames(PME_C7_winter18_1)[7] = "C7_output"
@@ -202,7 +181,7 @@ PME_C7_agg18 <- rbind(old.datC7_1, PME_C7_winter18_1)
 summary(PME_C7_agg18)
 
 # 6. Plot and facet by deployment:
-p <- ggplot(PME_C7_agg18, aes(x=timestamp1, y=(chlora20), colour =as.factor(flag_RE))) + # can swap color for deployment too 
+p <- ggplot(PME_C7_agg18, aes(x=timestamp1, y=(chlora20), colour =as.factor(deployment))) + # can swap color for deployment too 
   geom_point(alpha = 0.5) +
   #stat_smooth(method="lm", se=TRUE, formula=y ~ poly(x, 3, raw=TRUE), alpha=0.15) +
   theme_classic() + xlab("Time stamp") 
@@ -220,7 +199,7 @@ range(C7.9m$timestamp1)
 
 # 3. Restrict for date range
 C7.9m <- subset(C7.9m,timestamp1 >= as.POSIXct('2019-07-30 12:00:00') & 
-                    timestamp1 <= as.POSIXct('2019-08-20 00:00:00'))
+                  timestamp1 <= as.POSIXct('2019-08-20 00:00:00'))
 
 # 4. Plot the data:
 qplot(timestamp1, Sensor, data = C7.9m, geom="point") +
@@ -260,29 +239,24 @@ qplot(timestamp1, chlora20, data = C7.9m, geom="point") +
   #scale_x_datetime(date_breaks = "504 hour", labels = date_format("%b %d")) +
   theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0)) 
 
-summary(C7.9m)
-
 # 11. Add in column for depth, deployment and sensor 
 C7.9m$depth <- 9
 C7.9m$deployment <- "Summer2019"
 C7.9m$sensor <- 240115
-
-# 12. Add in variable for flag:
-C7.9m$flag_RE[C7.9m$timestamp1 >= as.POSIXct('2019-07-30 12:00:00') ] <- "n"
 
 ## ---------------------------
 # VI. All C7 data + Summer2019 data
 
 # 1. Add in variable for year: 
 PME_C7_summer2019 <- transform(C7.9m,
-                                year = as.numeric(format(timestamp1, '%Y')))
+                               year = as.numeric(format(timestamp1, '%Y')))
 names(PME_C7_summer2019)
 names(PME_C7_summer2019)
 
 # 2. Select for relevant parameters
 PME_C7_summer2019_1 <- subset(PME_C7_summer2019, select=c(sensor, deployment, year, timestamp1, depth,
-                                                      Temperature, Sensor, Gain, chlora20,
-                                                      Battery, flag_RE))
+                                                          Temperature, Sensor, Gain, chlora20,
+                                                          Battery))
 
 # 3. change names
 colnames(PME_C7_summer2019_1)[6] = "temperature"
@@ -294,26 +268,64 @@ colnames(PME_C7_summer2019_1)[10] = "battery"
 PME_C7_agg19 <- rbind(PME_C7_agg18, PME_C7_summer2019_1)
 summary(PME_C7_agg19)
 
-# 5. Plot and facet by deployment:
-p <- ggplot(PME_C7_agg19, aes(x=timestamp1, y=(est.chl_a), colour =as.factor(depth))) +
-  geom_point(alpha = 0.5)  +
-  theme_classic() + xlab("Time stamp") 
-
-# 6. Fix column names
+# 5. Fix column names
 colnames(PME_C7_agg19)[4] = "timestamp"
 colnames(PME_C7_agg19)[9] = "est.chl_a"
 
-# 7. Export and save data:
-# write.csv(PME_C7_agg19, paste0(outputDir, "Summer2019_PME_C7.csv")) # complied data file of all DO sensors along buoy line
-
+# 6. Plot and facet by deployment:
+p <- ggplot(PME_C7_agg19, aes(x=timestamp, y=(est.chl_a), colour =as.factor(depth))) +
+  geom_point(alpha = 0.5)  +
+  theme_classic() + xlab("Time stamp")
 
 ## ---------------------------
-# VII. End notes:
+# VII. Final QA'QC for temperature
+
+# 1. Flag temperature values:
+PME_C7_agg19.Q=PME_C7_agg19%>%
+  mutate(hour=lubridate::hour(timestamp))%>%
+  arrange(deployment, depth, timestamp)%>%
+  group_by(deployment, depth, hour)%>%
+  mutate(mnT=rollapply(temperature, width = 15, FUN = mean, fill=NA),
+         sdT=rollapply(temperature, width = 15, FUN = sd, fill=NA)) %>%
+  mutate(loT=mnT- (3*sdT), hiT=mnT+ (3*sdT))%>%
+  full_join(., PME_C7_agg19)%>%
+  mutate(flagT=ifelse((temperature<loT&!is.na(loT))|(temperature>hiT&!is.na(hiT)), 'o', 'n'))
+
+# Check the flag 
+p <- ggplot(PME_C7_agg19.Q, aes(x=timestamp, y=(temperature), colour =as.factor(flagT), shape= deployment)) +
+  geom_point(alpha = 0.7)  +
+  theme_classic() + facet_wrap(~flagT)
+
+# 2. Flag C7_output values:
+PME_C7_agg19.Q1=PME_C7_agg19.Q%>%
+  arrange(deployment, depth, timestamp)%>%
+  group_by(deployment, depth, hour)%>%
+  mutate(mnC7=rollapply(C7_output, width = 15, FUN = mean, fill=NA),
+         sdC7=rollapply(C7_output, width = 15, FUN = sd, fill=NA)) %>%
+  mutate(loC7=mnC7- (3*sdC7), hiC7=mnC7+ (3*sdC7))%>%
+  full_join(., PME_C7_agg19.Q)%>%
+  mutate(flag_RE=ifelse((C7_output<loC7&!is.na(loC7))|(C7_output>hiC7&!is.na(hiC7)), 'o', 'n'))
+
+p <- ggplot(PME_C7_agg19.Q1, aes(x=timestamp, y=(C7_output), colour =as.factor(flag_RE), shape= deployment)) +
+  geom_point(alpha = 0.5)  +
+  theme_classic() + facet_wrap(~flag_RE)
+
+# 3. The data pre-July 29st looks poor and should be flagged 
+PME_C7_agg19.Q1$flag_RE[PME_C7_agg19.Q1$timestamp <= as.POSIXct('2018-07-29 00:00:00')] <- "q"
+
+# 4. Remove unwanted variables:
+PME_C7_agg19.Q2 <- subset(PME_C7_agg19.Q1, select=c(sensor, deployment, year, timestamp, depth,
+                                                    temperature, C7_output, gain, est.chl_a,
+                                                    battery, flagT, flag_RE))
+# 5. Export and save data:
+# write.csv(PME_C7_agg19.Q2, paste0(outputDir, "Summer2019_PME_C7.csv")) # complied data file of all DO sensors along buoy line
+
+## ---------------------------
+# VIII. End notes:
 #   * NWT flgging codes:
 #       n=no flag; m=missing; q=questionable; e=estimated; o=outlier
 #
 #   * Back ground information for users:
 #       link to product mannual: https://www.turnerdesigns.com/cyclops-7f-submersible-fluorometer?lightbox=dataItem-jd6b16b81
 #       And here: https://www.pme.com/wp-content/uploads/2014/07/Manual1.pdf
-
 
