@@ -10,7 +10,9 @@
 ## Load packages:
 library(ggplot2)
 library(dplyr)
-
+library(lubridate)
+library(tidyverse)
+library(zoo)
 ## ---------------------------
 # File path setup:
 if (dir.exists('/Volumes/data/data2/rawarchive/gl4/buoy/')){
@@ -35,84 +37,77 @@ d2 <- subset(d,timestamp >= as.POSIXct('2018-07-03 13:00:00') &
 range(d2$timestamp)
 
 #   3. Calculate an estimate of tilt:
-d2$tilt.y <- (180/pi)*atan(d2$Acceleration.X/sqrt((d2$Acceleration.Y)^2 + (d2$Acceleration.Y)^2))
+d2$tilt.y <- (180/pi)*atan(d2$Acceleration.X/sqrt((d2$Acceleration.Y)^2 + (d2$Acceleration.Z)^2))
 hist(d2$tilt.y)
 
 #   4. Restrict for negative values of PAR
 d3 <- subset(d2, PAR >= 0)
 summary(d3)
 
-###
-# Flag outlier accelartions
-#   5. QA'QC accelerations start with Y
-A.Y_mean <- (mean(d3$Acceleration.Y)) 
-A.Y_sd <- (sd(d3$Acceleration.Y))
-# look for values 3 SD away from mean 
-A.Y_cutoff <- (A.Y_sd*3)
-#find outlier values 
-A.Y_upL <- (A.Y_mean + A.Y_cutoff)
-A.Y_lowL <- (A.Y_mean - A.Y_cutoff)
-# Apply flag: flag_Y
-d3$flag_Y[ d3$Acceleration.Y > -0.01585714 | d3$Acceleration.Y < -0.1599153 ] <- "o"
-d3$flag_Y[ d3$Acceleration.Y <= -0.01585714 & d3$Acceleration.Y >= -0.1599153 ] <- "n"
-
-qplot(timestamp, Acceleration.Y, data = d3, geom="point", color=flag_Y) +
-  theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0)) 
-
-#   6. QA'QC accelerations:Z
-A.Z_mean <- (mean(d3$Acceleration.Z)) # 0.1727163
-A.Z_sd <- (sd(d3$Acceleration.Z)) #0.03084187
-# look for values 3 SD away from mean 
-A.Z_cutoff <- (A.Z_sd*3)
-#find outlier values 
-A.Z_upL <- (A.Z_mean + A.Z_cutoff)
-A.Z_lowL <- (A.Z_mean - A.Z_cutoff)
-# Apply flag: flag_Z
-d3$flag_Z[ d3$Acceleration.Z > 0.3004781 | d3$Acceleration.Z < 0.09147239 ] <- "o"
-d3$flag_Z[ d3$Acceleration.Z <= 0.3004781 & d3$Acceleration.Z >= 0.09147239 ] <- "n"
-
-qplot(timestamp, Acceleration.Z, data = d3, geom="point", color=flag_Z) +
-  #scale_x_datetime(date_breaks = "504 hour", labels = date_format("%b %d")) +
-  theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0)) 
-
-#   7. QA'QC accelerations:X
-A.X_mean <- (mean(d3$Acceleration.X))
-A.X_sd <- (sd(d3$Acceleration.X)) 
-# look for values 3 SD away from mean 
-A.X_cutoff <- (A.X_sd*3)
-#find outlier values 
-A.X_upL <- (A.X_mean + A.X_cutoff)
-A.X_lowL <- (A.X_mean - A.X_cutoff)
-# Apply flag: flag_X
-d3$flag_X[ d3$Acceleration.X > 1.157674 | d3$Acceleration.X < 1.111905 ] <- "o"
-d3$flag_X[ d3$Acceleration.X <= 1.157674 & d3$Acceleration.X >=1.111905 ] <- "n"
-
-qplot(timestamp, Acceleration.X, data = d3, geom="point", color=flag_X) +
-  theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0)) 
-
-#   8. QA'QC accelerations:tilt
-A.t_mean <- (mean(d3$tilt.y))
-A.t_sd <- (sd(d3$tilt.y))
-# look for values 3 SD away from mean 
-A.t_cutoff <- (A.t_sd*3)
-#find outlier values 
-A.t_upL <- (A.t_mean + A.t_cutoff)
-A.t_lowL <- (A.t_mean - A.t_cutoff)
-# Apply flag: flag_T
-d3$flag_T[ d3$tilt.y > 92 | d3$tilt.y < 78.69312 ] <- "o"
-d3$flag_T[ d3$tilt.y <= 92 & d3$tilt.y >=78.69312 ] <- "n"
-
-qplot(timestamp, tilt.y, data = d3, geom="point", color=flag_T) +
-  theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0)) 
-
-#   9. Add in column for depth, deployment and sensor 
+#   5. Add in column for depth, deployment and sensor 
 d3$deployment <- "Summer2018"
 d3$year <- 2018
 
-#   10. Select for relevant parameters
-PME_PAR_summer18 <- subset(d3, select=c(Sensor, deployment, year, timestamp, depth, Temperature,
-                                       PAR, Acceleration.X, Acceleration.Y, Acceleration.Z, tilt.y, Battery, flag_Y, 
-                                       flag_Z, flag_X, flag_T))
+###
+# Flag outlier accelartions
+#   6. QA'QC accelerations start with temperature
+d3.Q=d3%>%
+  mutate(hour=lubridate::hour(timestamp))%>%
+  arrange(deployment, depth, timestamp)%>%
+  group_by(deployment, depth, hour)%>%
+  mutate(mnT=rollapply(Temperature, width = 15, FUN = mean, fill=NA),
+         sdT=rollapply(Temperature, width = 15, FUN = sd, fill=NA)) %>%
+  mutate(loT=mnT- (3*sdT), hiT=mnT+ (3*sdT))%>%
+  full_join(., d3)%>%
+  mutate(flagT=ifelse((Temperature<loT&!is.na(loT))|(Temperature>hiT&!is.na(hiT)), 'o', 'n'))
+
+#   7. QA'QC Acceleration.Y
+d3.Q1=d3.Q%>%
+  arrange(deployment, depth, timestamp)%>%
+  group_by(deployment, depth, hour)%>%
+  mutate(mnY=rollapply(Acceleration.Y, width = 15, FUN = mean, fill=NA),
+         sdY=rollapply(Acceleration.Y, width = 15, FUN = sd, fill=NA)) %>%
+  mutate(loY=mnY- (3*sdY), hiY=mnY+ (3*sdY))%>%
+  full_join(., d3.Q)%>%
+  mutate(flagY=ifelse((Acceleration.Y<loY&!is.na(loY))|(Acceleration.Y>hiY&!is.na(hiY)), 'o', 'n'))
+
+#   8. QA'QC Acceleration.Z
+d3.Q2=d3.Q1%>%
+  arrange(deployment, depth, timestamp)%>%
+  group_by(deployment, depth, hour)%>%
+  mutate(mnZ=rollapply(Acceleration.Z, width = 15, FUN = mean, fill=NA),
+         sdZ=rollapply(Acceleration.Z, width = 15, FUN = sd, fill=NA)) %>%
+  mutate(loZ=mnZ- (3*sdZ), hiZ=mnZ+ (3*sdZ))%>%
+  full_join(., d3.Q1)%>%
+  mutate(flagZ=ifelse((Acceleration.Z<loZ&!is.na(loZ))|(Acceleration.Z>hiZ&!is.na(hiZ)), 'o', 'n'))
+
+#   9. QA'QC accelerations:X
+d3.Q3=d3.Q2%>%
+  arrange(deployment, depth, timestamp)%>%
+  group_by(deployment, depth, hour)%>%
+  mutate(mnX=rollapply(Acceleration.X, width = 15, FUN = mean, fill=NA),
+         sdX=rollapply(Acceleration.X, width = 15, FUN = sd, fill=NA)) %>%
+  mutate(loX=mnX- (3*sdX), hiX=mnX+ (3*sdX))%>%
+  full_join(., d3.Q2)%>%
+  mutate(flagX=ifelse((Acceleration.X<loX&!is.na(loX))|(Acceleration.X>hiX&!is.na(hiX)), 'o', 'n'))
+
+#   10. QA'QC accelerations:tilt
+d3.Q4=d3.Q3%>%
+  arrange(deployment, depth, timestamp)%>%
+  group_by(deployment, depth, hour)%>%
+  mutate(mnTy=rollapply(tilt.y, width = 15, FUN = mean, fill=NA),
+         sdTy=rollapply(tilt.y, width = 15, FUN = sd, fill=NA)) %>%
+  mutate(loTy=mnTy- (3*sdTy), hiTy=mnTy+ (3*sdTy))%>%
+  full_join(., d3.Q3)%>%
+  mutate(flag_tilt=ifelse((tilt.y<loTy&!is.na(loTy))|(tilt.y>hiTy&!is.na(hiTy)), 'o', 'n'))
+
+qplot(timestamp, Acceleration.Z, data = d3.Q4, geom="point", color=flagZ) +
+  theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0)) 
+
+#   11. Select for relevant parameters
+PME_PAR_summer18 <- subset(d3.Q4, select=c(Sensor, deployment, year, timestamp, depth, Temperature,
+                                       PAR, Acceleration.X, Acceleration.Y, Acceleration.Z, tilt.y, Battery, flagT, flagY, 
+                                       flagZ, flagX, flag_tilt))
 summary(PME_PAR_summer18)
 #write.csv(PME_PAR_summer18, paste0(outputDir,"Summer2018_PME_PAR.csv")) # complied data file of all RBR temp sensors along buoy line
 
