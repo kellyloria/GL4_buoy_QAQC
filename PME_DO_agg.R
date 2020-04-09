@@ -10,35 +10,24 @@
 ## Load packages:
 library(ggplot2)
 library(dplyr)
+library(lubridate)
 library(tidyverse)
-
+library(zoo)
 ## ---------------------------
 # File path setup:
 if (dir.exists('/Volumes/data/data2/rawarchive/gl4/buoy/')){
   inputDir<- '/Volumes/data/data2/rawarchive/gl4/buoy/'
   outputDir<- '/Users/kellyloria/Desktop/' 
 }
-
 # Don't forget to 
 #     1. Set output path to personal desktop 
 #     2. Physically move final files (pending datamanager approval) into final folder in server
 
 ## ---------------------------
-# I. Read in past year's data - here 2018 summer
-old.datDO <- read.csv(paste0(inputDir,"/2018_2019/DO/1808_1907_deployment/Summer2018_PME_DO.csv"), header=T)
-
-#   Fix timestamp - so it is no longer a character:
-#   If it doesn't work use:
-old.datDO$timestamp <- as.POSIXct(old.datDO$timestamp, format="%Y-%m-%d %H:%M:%OS")
-range(old.datDO$timestamp)
-
-## ---------------------------
 ## I. Winter 2018 Deployment: 3m DO sensor 
-
 #     1. Read in new raw data at depth (for 2018-2019): DO_214423_180823_190723_3m.TXT
 do.3m <- read.delim(paste0(inputDir,"/2018_2019/DO/1808_1907_deployment/DO_214423_180823_190723_3m.TXT"), header=T, sep = ',')
 names(do.3m)
-summary(do.3m)
 
 #   2. fix timestamp
 do.3m$timestamp <- as.POSIXct(do.3m$Mountain.Standard.Time, format="%Y-%m-%d %H:%M:%OS")
@@ -61,21 +50,9 @@ summary(do.3m)
 do.3m$depth <- 3
 do.3m$deployment <- "Winter2018"
 do.3m$sensor <- 214423
-do.3m$flag_Temp <- "n"
-do.3m$flag_DO <- "n"
-
-#   Data check from plots
-qplot(timestamp, Temperature, data = do.3m, geom="point", color = factor(depth)) +
-  scale_x_datetime(date_breaks = "504 hour", labels = date_format("%b %d")) +
-  theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0))
-
-qplot(timestamp, Dissolved.Oxygen, data = do.3m, geom="point", color = factor(depth)) +
-  scale_x_datetime(date_breaks = "504 hour", labels = date_format("%b %d")) +
-  theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0))
 
 ## ---------------------------
 ## II. Winter 2018 Deployment: 7m DO sensor 
-
 #   1. Read in new raw data at depth (for 2018-2019): DO_245673_180823_190723_7m.TXT
 do.7m <- read.delim(paste0(inputDir,"/2018_2019/DO/1808_1907_deployment/DO_245673_180823_190723_7m.TXT"), header=T, sep = ',')
 
@@ -95,25 +72,12 @@ summary(do.7m)
 do.7m$depth <- 7
 do.7m$deployment <- "Winter2018"
 do.7m$sensor <- 245673
-do.7m$flag_Temp <- "n"
-do.7m$flag_DO <- "n"
-
-# Data check from plots
-qplot(timestamp, Temperature, data = do.7m, geom="point", ylab = "Temperature [C]", color = factor(depth)) +
-  scale_x_datetime(date_breaks = "504 hour", labels = date_format("%b %d")) +
-  theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0))
-
-qplot(timestamp, Dissolved.Oxygen, data = do.7m, geom="point", ylab = "DO [mgL]", color = factor(depth)) +
-  scale_x_datetime(date_breaks = "504 hour", labels = date_format("%b %d")) +
-  theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0))
 
 ## ---------------------------
 ## III. Winter 2018 Deployment: 11m DO sensor 
-
 #   1. Read in new raw data at depth (for 2018-2019): DO_245673_180823_190723_7m.TXT
 do.11m <- read.delim(paste0(inputDir,"/2018_2019/DO/1808_1907_deployment/DO_248353_180823_190723_11m.TXT"), header=T, sep = ',')
 names(do.11m)
-summary(do.11m)
 
 #   2. Fix timestamp
 do.11m$timestamp <- as.POSIXct(do.11m$Mountain.Standard.Time, format="%Y-%m-%d %H:%M:%OS")
@@ -121,7 +85,7 @@ range(do.11m$timestamp)
 
 #   3. Restrict for date range
 do.11m <- subset(do.11m,timestamp >= as.POSIXct('2018-08-24 13:00:00') & 
-                  timestamp <= as.POSIXct('2019-07-23 00:00:00'))
+                   timestamp <= as.POSIXct('2019-07-23 00:00:00'))
 range(do.11m$timestamp)
 
 #   4. Check new summary
@@ -134,52 +98,12 @@ summary(do.11m)
 do.11m$depth <- 11
 do.11m$deployment <- "Winter2018"
 do.11m$sensor <- 248353
-do.11m$flag_Temp <- "n"
-do.11m$flag_DO <- "n"
-
-# Data check from plots
-qplot(timestamp, Temperature, data = do.11m, geom="point", ylab = "Temperature [C]", color = factor(depth)) +
-  scale_x_datetime(date_breaks = "504 hour", labels = date_format("%b %d")) +
-  theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0))
-
-qplot(timestamp, Dissolved.Oxygen, data = do.11m, geom="point", ylab = "DO [mgL]", color = factor(depth)) +
-  scale_x_datetime(date_breaks = "504 hour", labels = date_format("%b %d")) +
-  theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0))
 
 ## ---------------------------
-## IV. Summer18 + Winter 2018 Deployment
-
+## IV. Winter 2018 Deployment 
 #   1. combine all QAQC winter 2018
 PME_DO_winter18 <- rbind(do.3m, do.7m, do.11m)
 summary(PME_DO_winter18)
-
-#   2. Add in year 
-PME_DO_winter18 <- transform(PME_DO_winter18,
-               year = as.numeric(format(timestamp, '%Y')))
-names(PME_DO_winter18)
-
-#   3.select for relevant parameters
-PME_DO_winter18 <- subset(PME_DO_winter18, select=c(sensor, deployment, year, timestamp, depth,
-                                              Temperature, Dissolved.Oxygen, Dissolved.Oxygen.Saturation, 
-                                              Battery, Q, flag_Temp, flag_DO))
-#   4. change names
-names((old.datDO))
-names(PME_DO_winter18)
-
-colnames(PME_DO_winter18)[6] = "temperature"
-colnames(PME_DO_winter18)[7] = "DO"
-colnames(PME_DO_winter18)[8] = "DO_saturation"
-colnames(PME_DO_winter18)[9] = "battery"
-
-#   5. Add winter 2018 to summer 2018
-PME_DO_agg18 <- rbind(old.datDO, PME_DO_winter18)
-summary(PME_DO_agg18)
-
-#   6. Plot and color by deployment:
-p <- ggplot(PME_DO_agg18, aes(x=timestamp, y=(DO), colour =as.factor(depth))) +
-  geom_point(alpha = 0.5) +
-  theme_classic() + xlab("Time stamp") + ylab("DO") 
-
 
 ## ---------------------------
 ## V. Summer19 Deployment:
@@ -192,7 +116,6 @@ p <- ggplot(PME_DO_agg18, aes(x=timestamp, y=(DO), colour =as.factor(depth))) +
 #   1. Read in new raw data at depth (for 2018-2019): DO_214423_190725_190820_3m.TXT
 do.3m <- read.delim(paste0(inputDir,"/2018_2019/DO/1907_1908_deployment/DO_214423_190725_190820_3m.TXT"), header=T, sep = ',')
 names(do.3m)
-summary(do.3m)
 
 #   2. Fix timestamp
 do.3m$timestamp <- as.POSIXct(do.3m$Mountain.Standard.Time, format="%Y-%m-%d %H:%M:%OS")
@@ -200,7 +123,7 @@ range(do.3m$timestamp)
 
 #   3. Restrict for date range
 do.3ma <- subset(do.3m,timestamp >= as.POSIXct('2019-07-25 13:00:00') & 
-                  timestamp <= as.POSIXct('2019-07-30 00:00:00'))
+                   timestamp <= as.POSIXct('2019-07-30 00:00:00'))
 range(do.3ma$timestamp)
 do.3mb <- subset(do.3m,timestamp >= as.POSIXct('2019-07-30 12:00:00') & 
                    timestamp <= as.POSIXct('2019-08-20 00:00:00'))
@@ -217,19 +140,9 @@ summary(do.3m_1)
 do.3m_1$depth <- 3
 do.3m_1$deployment <- "Summer2019"
 do.3m_1$sensor <- 214423
-do.3m_1$flag_Temp <- "n"
-do.3m_1$flag_DO <- "n"
-
-# Data check from plots
-qplot(timestamp, Temperature, data = do.3m_1, geom="point", ylab = "Temperature [C]", color = factor(depth)) +
-  theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0))
-
-qplot(timestamp, Dissolved.Oxygen, data = do.3m_1, geom="point", ylab = "DO [mgL]", color = factor(depth)) +
-  theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0))
 
 ## ---------------------------
 ## VI. Summer19 Deployment: 9m DO Sensor
-
 #   1. Read in new raw data at depth (for 2018-2019): 
 do.9m <- read.delim(paste0(inputDir,"/2018_2019/DO/1907_1908_deployment/DO_245673_190725_190820_9m.TXT"), header=T, sep = ',')
 names(do.9m)
@@ -258,57 +171,90 @@ summary(do.9m_1)
 do.9m_1$depth <- 9
 do.9m_1$deployment <- "Summer2019"
 do.9m_1$sensor <- 245673
-do.9m_1$flag_Temp <- "n"
-do.9m_1$flag_DO <- "n"
-
-# Data check from plots
-qplot(timestamp, Temperature, data = do.9m_1, geom="point", ylab = "Temperature [C]", color = factor(depth))  +
-  theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0))
-
-qplot(timestamp, Dissolved.Oxygen, data = do.9m_1, geom="point", ylab = "DO [mgL]", color = factor(depth)) +
-  theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0))
 
 ## ---------------------------
-## VII. All previous DO data + Summer 2018 Deployment
+## VII. Winter 2018 + Summer 2019 Deployment
 
-#   1. combine all QAQC winter 2018
+#   1. combine all summer 2019 data
 PME_DO_summer19 <- rbind(do.3m_1, do.9m_1)
 summary(PME_DO_summer19)
 
-#   2. Add in year 
-PME_DO_summer19 <- transform(PME_DO_summer19,
-                             year = as.numeric(format(timestamp, '%Y')))
-names(PME_DO_summer19)
+#   2. combine all summer 2019 and winter 2018 data
+PME_DO_summer_agg <- rbind(PME_DO_winter18, PME_DO_summer19)
+summary(PME_DO_summer_agg)
 
-#   3.select for relevant parameters
-PME_DO_summer19 <- subset(PME_DO_summer19, select=c(sensor, deployment, year, timestamp, depth,
-                                                    Temperature, Dissolved.Oxygen, Dissolved.Oxygen.Saturation, 
-                                                    Battery, Q, flag_Temp, flag_DO))
-#   4. Change names
-names((PME_DO_agg18))
-names(PME_DO_summer19)
+## ---------------------------
+# VIII. QA'QC for temperature and DO
+#   1. combine all QAQC winter 2018
+PME_DO_summer_agg.Q=PME_DO_summer_agg%>%
+  mutate(hour=lubridate::hour(timestamp))%>%
+  arrange(deployment, depth, timestamp)%>%
+  group_by(deployment, depth, hour)%>%
+  mutate(mnT=rollapply(Temperature, width = 25, FUN = mean, fill=NA),
+         sdT=rollapply(Temperature, width = 25, FUN = sd, fill=NA)) %>%
+  mutate(loT=mnT- (3*sdT), hiT=mnT+ (3*sdT))%>%
+  full_join(., PME_DO_summer_agg)%>%
+  mutate(flagT=ifelse((Temperature<loT&!is.na(loT))|(Temperature>hiT&!is.na(hiT)), 'o', 'n'))
 
-colnames(PME_DO_summer19)[6] = "temperature"
-colnames(PME_DO_summer19)[7] = "DO"
-colnames(PME_DO_summer19)[8] = "DO_saturation"
-colnames(PME_DO_summer19)[9] = "battery"
+#   2. QA'QC for DO
+PME_DO_summer_agg.Q1=PME_DO_summer_agg.Q%>%
+  arrange(deployment, depth, timestamp)%>%
+  group_by(deployment, depth, hour)%>%
+  mutate(mnDO=rollapply(Dissolved.Oxygen, width = 25, FUN = mean, fill=NA),
+         sdDO=rollapply(Dissolved.Oxygen, width = 25, FUN = sd, fill=NA)) %>%
+  mutate(loDO=mnDO- (3*sdDO), hiDO=mnDO+ (3*sdDO))%>%
+  full_join(., PME_DO_summer_agg.Q)%>%
+  mutate(flagDO=ifelse((Dissolved.Oxygen<loDO&!is.na(loDO))|
+                         (Dissolved.Oxygen>hiDO&!is.na(hiDO)), 'o', 'n'))
 
-#   5. Add winter 2018 to summer 2019
-PME_DO_agg19 <- rbind(PME_DO_agg18, PME_DO_summer19)
-summary(PME_DO_agg19)
+p <- ggplot(PME_DO_summer_agg.Q1, aes(x=timestamp, y=(Dissolved.Oxygen), 
+                                      colour =as.factor(flagDO), shape= deployment)) +
+  geom_point(alpha = 0.5)  +
+  theme_classic() + facet_wrap(~flagDO)
 
-# Plot and color by deployment:
-p <- ggplot(PME_DO_agg19, aes(x=timestamp, y=(DO), colour =as.factor(depth))) +
-  geom_point(alpha = 0.5) +
-  #stat_smooth(method="lm", se=TRUE, formula=y ~ poly(x, 3, raw=TRUE), alpha=0.15)
-  theme_classic() + xlab("Time stamp") + ylab("DO") 
+#   3. Add in year 
+PME_DO_summer19.Q2 <- transform(PME_DO_summer_agg.Q1,
+                                year = as.numeric(format(timestamp, '%Y')))
+names(PME_DO_summer19.Q2)
 
-p <- ggplot(PME_DO_agg19, aes(x=timestamp, y=(temperature), colour =as.factor(deployment))) +
-  geom_point(alpha = 0.5) +
-  #stat_smooth(method="lm", se=TRUE, formula=y ~ poly(x, 3, raw=TRUE), alpha=0.15) 
-  theme_classic() + xlab("Time stamp") + ylab("DO") 
+## ---------------------------
+# VIII. Combine 2019 Summer Agg and 2018 Summer data 
 
-#write.csv(PME_DO_agg19, paste0(outputDir,"Summer2019_PME_DO.csv")) # complied data file of all DO sensors along buoy line
+#   1. Select for relevant parameters
+PME_DO_summer19.Q3 <- subset(PME_DO_summer19.Q2, select=c(sensor, deployment, year, timestamp, depth,
+                                                          Temperature, Dissolved.Oxygen, Dissolved.Oxygen.Saturation, 
+                                                          Battery, Q, flagT, flagDO))
+#   2. Change names
+names((PME_DO_summer19.Q3))
+colnames(PME_DO_summer19.Q3)[6] = "temperature"
+colnames(PME_DO_summer19.Q3)[7] = "DO"
+colnames(PME_DO_summer19.Q3)[8] = "DO_saturation"
+colnames(PME_DO_summer19.Q3)[9] = "battery"
+
+#   3. Read in past year's data - here 2018 summer
+old.datDO <- read.csv(paste0(inputDir,"/2018_2019/DO/1808_1907_deployment/Summer2018_PME_DO.csv"), header=T)
+
+#   4. Fix timestamp - so it is no longer a character:
+old.datDO$timestamp1 <- as.POSIXct(old.datDO$timestamp, format="%Y-%m-%d %H:%M:%OS")
+range(old.datDO$timestamp1)
+
+#   5.select for relevant parameters
+old.datDO.Q <- subset(old.datDO, select=c(sensor, deployment, year, timestamp1, Depth,
+                                          temperature, DO, DO_saturation, 
+                                          battery, Q, flagT, flagDO))
+#   6. Change names
+names((old.datDO.Q))
+colnames(old.datDO.Q)[4] = "timestamp"
+colnames(old.datDO.Q)[5] = "depth"
+
+PME_DO_summer_agg.Q4 <- rbind(old.datDO.Q, PME_DO_summer19.Q3)
+summary(PME_DO_summer_agg.Q4)
+
+#   7. Plot and color by deployment:
+p <- ggplot(PME_DO_summer_agg.Q4, aes(x=timestamp, y=(DO), colour =(depth), shape = flagDO)) +
+  geom_point(alpha = 0.5) + theme_classic()
+
+#write.csv(PME_DO_summer_agg.Q4, paste0(outputDir,"Summer2019_PME_DO.csv")) # complied data file of all DO sensors along buoy line
 
 ## ---------------------------
 # VIII. End notes:
@@ -318,4 +264,3 @@ p <- ggplot(PME_DO_agg19, aes(x=timestamp, y=(temperature), colour =as.factor(de
 ##  * Back ground information for users:
 #       For PME DO a Q value of < 0.7 is poor quality
 #       Sensor manual: https://www.pme.com/product-installs/q-measurement-found-in-minidot
-

@@ -10,8 +10,9 @@
 ## Load packages:
 library(ggplot2)
 library(dplyr)
+library(lubridate)
 library(tidyverse)
-
+library(zoo)
 ## ---------------------------
 # File path setup:
 if (dir.exists('/Volumes/data/data2/rawarchive/gl4/buoy/')){
@@ -21,10 +22,8 @@ if (dir.exists('/Volumes/data/data2/rawarchive/gl4/buoy/')){
 # Don't forget to 
 #     1. Set output path to personal desktop 
 #     2. Physically move final files (pending datamanager approval) into final folder in server
-
 ## ---------------------------
 # I. Read in Summer 2018 deployment: 0.4m 
-
 m0.4 <- read.csv(paste0(inputDir,"2018_2019/RRB/1807_1808_deployment/102495_07_03_08_21_2018_0.4m.csv"), 
                  header=T)
 
@@ -34,34 +33,11 @@ range(m0.4$timestamp)
 
 #   2. Restrict for date range "2018-07-03 13:00:00 MDT" to "2018-08-21 00:00:00 MDT"
 m0.4.2 <- subset(m0.4,timestamp >= as.POSIXct('2018-07-03 13:00:00') & 
-               timestamp <= as.POSIXct('2018-08-21 00:00:00'))
+                   timestamp <= as.POSIXct('2018-08-21 00:00:00'))
 range(m0.4.2$timestamp)
 
 #   3. Check data summary:
 summary(m0.4.2)
-
-#   Temperature has some odd points:
-qplot(timestamp, Temperature, data = m0.4.2, geom="point") +
-  #scale_x_datetime(date_breaks = "504 hour", labels = date_format("%b %d")) +
-  theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0)) 
-
-###
-#   4. Flag outliers temperatures
-temp_mean <- (mean(m0.4.2$Temperature)) 
-temp_sd <- (sd(m0.4.2$Temperature)) 
-# look for values 4 SD away from mean 
-temp_cutoff <- (temp_sd*3.5)
-#find outlier values 
-temp_upL <- (temp_mean + temp_cutoff)
-temp_lowL <- (temp_mean - temp_cutoff)
-# Apply flag: flag_Temp
-m0.4.2$flag_Temp[ m0.4.2$Temperature > 15.39588 | m0.4.2$Temperature < 7.115377 ] <- "o"
-m0.4.2$flag_Temp[ m0.4.2$Temperature <= 15.39588 & m0.4.2$Temperature >= 7.115377 ] <- "n"
-
-qplot(timestamp, Temperature, data = m0.4.2, geom="point", color=flag_Temp) +
-  #scale_x_datetime(date_breaks = "504 hour", labels = date_format("%b %d")) +
-  theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0)) 
-
 
 ## ---------------------------
 # II. Read in Summer 2018 deployment: 1.5m 
@@ -74,29 +50,11 @@ range(d1.5m$timestamp)
 
 #   2. Restrict for date range "2018-07-03 13:00:00 MDT" to "2018-08-21 00:00:00 MDT"
 d1.5m.2 <- subset(d1.5m,timestamp >= as.POSIXct('2018-07-03 13:00:00') & 
-               timestamp <= as.POSIXct('2018-08-21 00:00:00'))
+                    timestamp <= as.POSIXct('2018-08-21 00:00:00'))
 range(d1.5m.2$timestamp)
 
 #   3. Check data summary:
 summary(d1.5m.2) 
-
-###
-#   4. Flag outliers temperatures
-temp_mean <- (mean(d1.5m.2$Temperature)) 
-temp_sd <- (sd(d1.5m.2$Temperature)) 
-# look for values 4 SD away from mean 
-temp_cutoff <- (temp_sd*4)
-#find outlier values 
-temp_upL <- (temp_mean + temp_cutoff)
-temp_lowL <- (temp_mean - temp_cutoff)
-# Apply flag: flag_Temp
-d1.5m.2$flag_Temp[ d1.5m.2$Temperature > 15.68842 | d1.5m.2$Temperature < 7.192818 ] <- "o"
-d1.5m.2$flag_Temp[ d1.5m.2$Temperature <= 15.68842 & d1.5m.2$Temperature >= 7.192818 ] <- "n"
-
-qplot(timestamp, Temperature, data = d1.5m.2, geom="point", color=flag_Temp) +
-  #scale_x_datetime(date_breaks = "504 hour", labels = date_format("%b %d")) +
-  theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0)) 
-
 
 ## ---------------------------
 # III. Read in Summer 2018 deployment: 3m 
@@ -109,32 +67,11 @@ range(d3m$timestamp)
 
 #   2. Restrict for date range "2018-07-03 13:00:00 MDT" to "2018-08-21 00:00:00 MDT"
 d3m_2 <- subset(d3m,timestamp >= as.POSIXct('2018-07-03 13:00:00') & 
-               timestamp <= as.POSIXct('2018-08-21 00:00:00'))
+                  timestamp <= as.POSIXct('2018-08-21 00:00:00'))
 range(d3m_2$timestamp)
 
 #   3. Check data summary:
 summary(d3m_2)
-
-qplot(timestamp, Temperature, data = d3m_2, geom="point") +
-  #scale_x_datetime(date_breaks = "504 hour", labels = date_format("%b %d")) +
-  theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0)) 
-
-###
-#   4. Flag outliers temperatures
-temp_mean <- (mean(d3m_2$Temperature)) 
-temp_sd <- (sd(d3m_2$Temperature)) 
-# look for values 3 SD away from mean 
-temp_cutoff <- (temp_sd*3)
-#find outlier values 
-temp_upL <- (temp_mean + temp_cutoff)
-temp_lowL <- (temp_mean - temp_cutoff)
-# Apply flag: flag_Temp
-d3m_2$flag_Temp[ d3m_2$Temperature > 14.60748 | d3m_2$Temperature < 7.724803 ] <- "o"
-d3m_2$flag_Temp[ d3m_2$Temperature <= 14.60748 & d3m_2$Temperature >= 7.724803 ] <- "n"
-
-qplot(timestamp, Temperature, data = d3m_2, geom="point", color=flag_Temp) +
-  #scale_x_datetime(date_breaks = "504 hour", labels = date_format("%b %d")) +
-  theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0)) 
 
 ## ---------------------------
 # IV. Read in Summer 2018 deployment: 5.1m 
@@ -147,30 +84,8 @@ range(d5.1m$timestamp)
 
 #   2. Restrict for date range "2018-07-03 13:00:00 MDT" to "2018-08-21 00:00:00 MDT"
 d5.1m_2 <- subset(d5.1m,timestamp >= as.POSIXct('2018-07-03 13:00:00') & 
-               timestamp <= as.POSIXct('2018-08-21 00:00:00'))
+                    timestamp <= as.POSIXct('2018-08-21 00:00:00'))
 range(d5.1m_2$timestamp)
-
-#   3. Check out the summary data spread
-qplot(timestamp, Temperature, data = d5.1m_2, geom="point") +
-  scale_x_datetime(date_breaks = "72 hour", labels = date_format("%b %d")) +
-  theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0))
-
-###
-#   4. Flag outliers temperatures
-temp_mean <- (mean(d5.1m_2$Temperature)) 
-temp_sd <- (sd(d5.1m_2$Temperature)) 
-# look for values 4 SD away from mean 
-temp_cutoff <- (temp_sd*3)
-#find outlier values 
-temp_upL <- (temp_mean + temp_cutoff)
-temp_lowL <- (temp_mean - temp_cutoff)
-# Apply flag: flag_Temp
-d5.1m_2$flag_Temp[ d5.1m_2$Temperature > 14.19813 | d5.1m_2$Temperature < 7.134998 ] <- "o"
-d5.1m_2$flag_Temp[ d5.1m_2$Temperature <= 14.19813 & d5.1m_2$Temperature >= 7.134998 ] <- "n"
-
-qplot(timestamp, Temperature, data = d5.1m_2, geom="point", color=flag_Temp) +
-  theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0)) 
-
 
 ## ---------------------------
 # V. Read in Summer 2018 deployment: 7.5m 
@@ -183,19 +98,8 @@ range(d$timestamp)
 
 #   2. Restrict for date range "2018-07-03 13:00:00 MDT" to "2018-08-21 00:00:00 MDT"
 d7.5m_2 <- subset(d7.5m,timestamp >= as.POSIXct('2018-07-03 13:00:00') & 
-               timestamp <= as.POSIXct('2018-08-21 00:00:00'))
+                    timestamp <= as.POSIXct('2018-08-21 00:00:00'))
 range(d7.5m_2$timestamp)
-
-qplot(timestamp, Temperature, data = d7.5m_2, geom="point") +
-  scale_x_datetime(date_breaks = "72 hour", labels = date_format("%b %d")) +
-  theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0))
-
-###
-#   3. Flag outliers temperatures (here none)
-d7.5m_2$flag_Temp <- "n"
-
-qplot(timestamp, Temperature, data = d7.5m_2, geom="point", color=flag_Temp) +
-  theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0)) 
 
 ## ---------------------------
 # VI. Read in Summer 2018 deployment: 10m 
@@ -208,28 +112,8 @@ range(d$timestamp)
 
 #   2. Restrict for date range "2018-07-03 13:00:00 MDT" to "2018-08-21 00:00:00 MDT"
 d10m_2 <- subset(d10m,timestamp >= as.POSIXct('2018-07-03 13:00:00') & 
-               timestamp <= as.POSIXct('2018-08-21 00:00:00'))
+                   timestamp <= as.POSIXct('2018-08-21 00:00:00'))
 range(d10m_2$timestamp)
-
-qplot(timestamp, Temperature, data = d10m_2, geom="point", ylab = "Temperature [C]") +
-  theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0))
-
-###
-#   3. Flag outliers temperatures
-temp_mean <- (mean(d10m_2$Temperature)) 
-temp_sd <- (sd(d10m_2$Temperature)) 
-# look for values 4 SD away from mean 
-temp_cutoff <- (temp_sd*3)
-#find outlier values 
-temp_upL <- (temp_mean + temp_cutoff)
-temp_lowL <- (temp_mean - temp_cutoff)
-# Apply flag: flag_Temp
-d10m_2$flag_Temp[ d10m_2$Temperature > 12.03469 | d10m_2$Temperature < 3.831558 ] <- "o"
-d10m_2$flag_Temp[ d10m_2$Temperature <= 12.03469 & d10m_2$Temperature >= 3.831558 ] <- "n"
-
-qplot(timestamp, Temperature, data = d10m_2, geom="point", color=flag_Temp) +
-  theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0)) 
-
 
 ## ---------------------------
 # VII. Read in Summer 2018 deployment: 11.5m 
@@ -242,27 +126,8 @@ range(dll.5m$timestamp)
 
 #   2. Restrict for date range "2018-07-03 13:00:00 MDT" to "2018-08-21 00:00:00 MDT"
 dll.5m_2 <- subset(dll.5m,timestamp >= as.POSIXct('2018-07-03 13:00:00') & 
-               timestamp <= as.POSIXct('2018-08-21 00:00:00'))
+                     timestamp <= as.POSIXct('2018-08-21 00:00:00'))
 range(dll.5m$timestamp)
-
-qplot(timestamp, Temperature, data = dll.5m_2, geom="point", ylab = "Temperature [C]") +
-  theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0))
-
-###
-#   3. Flag outliers temperatures
-temp_mean <- (mean(dll.5m_2$Temperature)) 
-temp_sd <- (sd(dll.5m_2$Temperature)) 
-# look for values 4 SD away from mean 
-temp_cutoff <- (temp_sd*4)
-#find outlier values 
-temp_upL <- (temp_mean + temp_cutoff)
-temp_lowL <- (temp_mean - temp_cutoff)
-# Apply flag: flag_Temp
-dll.5m_2$flag_Temp[ dll.5m_2$Temperature > 11.52138 | dll.5m_2$Temperature < 2.937595 ] <- "o"
-dll.5m_2$flag_Temp[ dll.5m_2$Temperature <= 11.52138 & dll.5m_2$Temperature >= 2.937595 ] <- "n"
-
-qplot(timestamp, Temperature, data = dll.5m_2, geom="point", color=flag_Temp) +
-  theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0)) 
 
 ## ---------------------------
 # VIII. Read in Summer 2018 deployment: 6.5m 
@@ -275,27 +140,8 @@ range(d6.5m$timestamp)
 
 #   2. Restrict for date range "2018-07-03 13:00:00 MDT" to "2018-08-21 00:00:00 MDT"
 d6.5m_2 <- subset(d6.5m,timestamp >= as.POSIXct('2018-07-03 13:00:00') & 
-               timestamp <= as.POSIXct('2018-08-21 00:00:00'))
+                    timestamp <= as.POSIXct('2018-08-21 00:00:00'))
 range(d6.5m_2$timestamp)
-
-qplot(timestamp, Temperature, data = d6.5m_2, geom="point", ylab = "Temperature [C]") +
-  theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0))
-
-###
-#   3. Flag outliers temperatures
-temp_mean <- (mean(d6.5m_2$Temperature)) 
-temp_sd <- (sd(d6.5m_2$Temperature)) 
-# look for values 4 SD away from mean 
-temp_cutoff <- (temp_sd*4)
-#find outlier values 
-temp_upL <- (temp_mean + temp_cutoff)
-temp_lowL <- (temp_mean - temp_cutoff)
-# Apply flag: flag_Temp
-d6.5m_2$flag_Temp[ d6.5m_2$Temperature > 15.38964 | d6.5m_2$Temperature < 5.229635 ] <- "o"
-d6.5m_2$flag_Temp[ d6.5m_2$Temperature <= 15.38964 & d6.5m_2$Temperature >= 5.229635 ] <- "n"
-
-qplot(timestamp, Temperature, data = d6.5m_2, geom="point", color=flag_Temp) +
-  theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0)) 
 
 ## ---------------------------
 # IX. Combine all sensors data into 1 file:
@@ -320,16 +166,42 @@ rbr_dat$year <- 2018
 rbr_dat$deployment <- "Summer2018"
 
 #   4. fix column order
-rbr_dat_exp <- subset(rbr_dat, select=c(Sensor, deployment, year, timestamp, Depth, Temperature, flag_Temp))
+rbr_dat_exp <- subset(rbr_dat, select=c(Sensor, deployment, year, timestamp, Depth, Temperature))
 summary(rbr_dat_exp)
 # write.csv(rbr_dat_exp, paste0(outputDir,"Summer2018_RBR.csv")) # complied data file of all RBR temp sensors along buoy line 
 
-# Check to make sure all sensors + data are there
-names(rbr_dat)
-Summer2018_RBR <- qplot(timestamp, Temperature, data = rbr_dat, geom="point", ylab = "Temperature [C]",
-                        color = factor(Depth), shape= flag_Temp) +
-  theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0)) + theme_classic()
+## ---------------------------
+# X. Final QA'QC for temperature
+
+# 1. Flag temperature values:
+rbr_dat_exp.Q=rbr_dat_exp%>%
+  mutate(hour=lubridate::hour(timestamp))%>%
+  arrange(deployment, Depth, timestamp)%>%
+  group_by(deployment, Depth, hour)%>%
+  mutate(mnT=rollapply(Temperature, width = 20, FUN = mean, fill=NA),
+         sdT=rollapply(Temperature, width = 20, FUN = sd, fill=NA)) %>%
+  mutate(loT=mnT- (3*sdT), hiT=mnT+ (3*sdT))%>%
+  full_join(., rbr_dat_exp)%>%
+  mutate(flagT=ifelse((Temperature<loT&!is.na(loT))|(Temperature>hiT&!is.na(hiT)), 'o', 'n'))
+
+# 2. Check to make sure all sensors + data are there
+Summer2018_RBR <- qplot(timestamp, Temperature, data = rbr_dat_exp.Q, geom="point",
+                        color = factor(Depth), shape= flagT) +
+  theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0)) + 
+  theme_classic() + facet_wrap(~flagT)
 #ggsave("Summer2018_RBR.pdf", Summer2018_RBR, scale = 2, width = 15, height = 5, units = c("cm"), dpi = 500)
+
+# 3. Remove unwanted variables:
+Summer2018_RBR <- subset(rbr_dat_exp.Q, select=c(Sensor, deployment, year, timestamp, Depth,
+                                                 Temperature, flagT))
+
+# 4. change names
+colnames(Summer2018_RBR)[1] = "sensor"
+colnames(Summer2018_RBR)[5] = "depth"
+colnames(Summer2018_RBR)[6] = "temperature"
+
+# 5. Export and save data:
+# write.csv(Summer2018_RBR, paste0(outputDir, "Summer2018_RBR.csv")) # complied data file of all DO sensors along buoy line
 
 ## ---------------------------
 # VI. End notes:
@@ -338,5 +210,3 @@ Summer2018_RBR <- qplot(timestamp, Temperature, data = rbr_dat, geom="point", yl
 #
 #   * No clear battery column in raw download overtime
 #   * Salinity and original calibration settings seem a little off
-
-

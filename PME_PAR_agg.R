@@ -22,10 +22,8 @@ if (dir.exists('/Volumes/data/data2/rawarchive/gl4/buoy/')){
 # Don't forget to 
 #     1. Set output path to personal desktop 
 #     2. Physically move final files (pending datamanager approval) into final folder in server
-
 ## ---------------------------
 # I. Winter 2018 Deployment 
-
 # 3m PAR sensor 
 #   1. Read in new raw data at depth (for 2018-2019): PAR_695220_180823_190723_3m.TXT
 PAR.3m <- read.delim(paste0(inputDir,"/2018_2019/PAR/1808_1908_deployment/PAR_695220_180823_190723_3m.TXT"), header=T, sep = ',')
@@ -101,10 +99,8 @@ PAR.9mm_1$depth <- 9
 PAR.9mm_1$deployment <- "Summer2019"
 PAR.9mm_1$sensor <- 695220
 
-
 ## ---------------------------
 # III. Winter 2018 Deployment + Summer 2019 Deployment
-
 #   1. Add winter 2018 to summer 2018
 PME_PAR_agg19 <- rbind(PAR.9mm_1, PAR.3m)
 summary(PME_PAR_agg19)
@@ -115,7 +111,6 @@ PME_PAR_agg19Q <- transform(PME_PAR_agg19,
 
 ## ---------------------------
 # IV. QA'QC of PME_PAR_agg19Q
-
 #   1. QA'QC accelerations start with temperature
 PME_PAR_agg19.Q=PME_PAR_agg19Q%>%
   mutate(hour=lubridate::hour(timestamp1))%>%
@@ -209,8 +204,6 @@ colnames(PME_PAR_agg19.T)[8] = "acceleration.X"
 colnames(PME_PAR_agg19.T)[9] = "acceleration.Y"
 colnames(PME_PAR_agg19.T)[10] = "acceleration.Z"
 colnames(PME_PAR_agg19.T)[12] = "battery"
-
-
 
 #   5.Plot and color by deployment, depth or flag:
 p <- ggplot(PME_PAR_agg19.T, aes(x=timestamp, y=(PAR), colour =as.factor(flag_tilt))) +
