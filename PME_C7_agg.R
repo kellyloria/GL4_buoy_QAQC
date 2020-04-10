@@ -280,7 +280,10 @@ p <- ggplot(PME_C7_agg19, aes(x=timestamp, y=(est.chl_a), colour =as.factor(dept
 ## ---------------------------
 # VII. Final QA'QC for temperature
 
-# 1. Flag temperature values:
+# 1. Remove all the temperature values out of range 0-35 degreeC
+PME_C7_agg19 <- subset(PME_C7_agg19, temperature >= 0)
+
+# 2. Flag temperature values:
 PME_C7_agg19.Q=PME_C7_agg19%>%
   mutate(hour=lubridate::hour(timestamp))%>%
   arrange(deployment, depth, timestamp)%>%
@@ -296,7 +299,7 @@ p <- ggplot(PME_C7_agg19.Q, aes(x=timestamp, y=(temperature), colour =as.factor(
   geom_point(alpha = 0.7)  +
   theme_classic() + facet_wrap(~flagT)
 
-# 2. Flag C7_output values:
+# 3. Flag C7_output values:
 PME_C7_agg19.Q1=PME_C7_agg19.Q%>%
   arrange(deployment, depth, timestamp)%>%
   group_by(deployment, depth, hour)%>%
@@ -310,14 +313,14 @@ p <- ggplot(PME_C7_agg19.Q1, aes(x=timestamp, y=(C7_output), colour =as.factor(f
   geom_point(alpha = 0.5)  +
   theme_classic() + facet_wrap(~flag_RE)
 
-# 3. The data pre-July 29st looks poor and should be flagged 
+# 4. The data pre-July 29st looks poor and should be flagged 
 PME_C7_agg19.Q1$flag_RE[PME_C7_agg19.Q1$timestamp <= as.POSIXct('2018-07-29 00:00:00')] <- "q"
 
-# 4. Remove unwanted variables:
+# 5. Remove unwanted variables:
 PME_C7_agg19.Q2 <- subset(PME_C7_agg19.Q1, select=c(sensor, deployment, year, timestamp, depth,
                                                     temperature, C7_output, gain, est.chl_a,
                                                     battery, flagT, flag_RE))
-# 5. Export and save data:
+# 6. Export and save data:
 # write.csv(PME_C7_agg19.Q2, paste0(outputDir, "Summer2019_PME_C7.csv")) # complied data file of all DO sensors along buoy line
 
 ## ---------------------------

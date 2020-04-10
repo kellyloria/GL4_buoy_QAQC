@@ -449,7 +449,7 @@ p <- ggplot(RBR_temp_agg19.Q4, aes(x=timestamp, y=(temperature), colour =(depth)
   theme_classic() + 
   facet_wrap(~flagT)
 
-# write.csv(RBR_temp_agg19.Q,  paste0(outputDir,"Summer2019_RBR_Temp.csv")) # complied data file of all RBR sensors along buoy line
+# write.csv(RBR_temp_agg19.Q4,  paste0(outputDir,"Summer2019_RBR_Temp.csv")) # complied data file of all RBR sensors along buoy line
 
 ## ---------------------------
 # VI. End notes:

@@ -185,7 +185,11 @@ summary(PME_DO_summer_agg)
 
 ## ---------------------------
 # VIII. QA'QC for temperature and DO
-#   1. combine all QAQC winter 2018
+
+#   1. Remove all the temperature values out of range 0-35 degreeC
+PME_DO_summer_agg <- subset(PME_DO_summer_agg, Temperature >= 0)
+
+#   2. combine all QAQC winter 2018
 PME_DO_summer_agg.Q=PME_DO_summer_agg%>%
   mutate(hour=lubridate::hour(timestamp))%>%
   arrange(deployment, depth, timestamp)%>%
@@ -196,7 +200,7 @@ PME_DO_summer_agg.Q=PME_DO_summer_agg%>%
   full_join(., PME_DO_summer_agg)%>%
   mutate(flagT=ifelse((Temperature<loT&!is.na(loT))|(Temperature>hiT&!is.na(hiT)), 'o', 'n'))
 
-#   2. QA'QC for DO
+#   3. QA'QC for DO
 PME_DO_summer_agg.Q1=PME_DO_summer_agg.Q%>%
   arrange(deployment, depth, timestamp)%>%
   group_by(deployment, depth, hour)%>%
@@ -212,7 +216,7 @@ p <- ggplot(PME_DO_summer_agg.Q1, aes(x=timestamp, y=(Dissolved.Oxygen),
   geom_point(alpha = 0.5)  +
   theme_classic() + facet_wrap(~flagDO)
 
-#   3. Add in year 
+#   4. Add in year 
 PME_DO_summer19.Q2 <- transform(PME_DO_summer_agg.Q1,
                                 year = as.numeric(format(timestamp, '%Y')))
 names(PME_DO_summer19.Q2)
@@ -257,7 +261,7 @@ p <- ggplot(PME_DO_summer_agg.Q4, aes(x=timestamp, y=(DO), colour =(depth), shap
 #write.csv(PME_DO_summer_agg.Q4, paste0(outputDir,"Summer2019_PME_DO.csv")) # complied data file of all DO sensors along buoy line
 
 ## ---------------------------
-# VIII. End notes:
+# IX. End notes:
 #   * NWT flgging codes:
 #       n=no flag; m=missing; q=questionable; e=estimated; o=outlier
 #
