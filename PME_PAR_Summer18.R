@@ -74,7 +74,7 @@ d3.Q=d3 %>%
   mutate(mnAt=rollapply(tilt.y, width = 15, FUN = mean, fill=NA),
          sdAt=rollapply(tilt.y, width = 15, FUN = sd, fill=NA)) %>%
   mutate(loAt=mnAt- (3*sdAt), hiAt=mnAt+ (3*sdAt))%>%
-  full_join(., PME_PAR_agg19Q)%>% #then use case_when to sort the final flags
+  full_join(., d3)%>% #then use case_when to sort the final flags
   mutate(
     flag_temperature=
       case_when( #may as well add the m in here since your metadata days that flag was used
@@ -107,7 +107,11 @@ d3.Q=d3 %>%
     flag_At=
       case_when( 
         tilt.y<loAt&!is.na(loAt) ~ 'o',
-        tilt.y>hiAt&!is.na(hiAt) ~ 'o', TRUE ~ 'n'))
+        tilt.y>hiAt&!is.na(hiAt) ~ 'o', TRUE ~ 'n')) %>%
+  mutate(
+    flag_battery=
+      case_when( 
+        Battery<1.5 ~ 'q', TRUE ~ 'n'))
 
 p <- ggplot(d3.Q, aes(x=timestamp, y=(PAR), 
                                   colour =as.factor(flag_At), shape= deployment)) +
@@ -117,7 +121,7 @@ p <- ggplot(d3.Q, aes(x=timestamp, y=(PAR),
 #   7. Select for relevant parameters
 PME_PAR_summer18 <- subset(d3.Q, select=c(Sensor, deployment, year, timestamp, depth, Temperature,
                                        PAR, Acceleration.X, Acceleration.Y, Acceleration.Z, tilt.y, Battery, 
-                                       flag_temperature, flag_Ax, flag_Ay, flag_Az, flag_At))
+                                       flag_temperature, flag_Ax, flag_Ay, flag_Az, flag_At, flag_battery))
 summary(PME_PAR_summer18)
 #write.csv(PME_PAR_summer18, paste0(outputDir,"Summer2018_PME_PAR.csv")) # complied data file of all RBR temp sensors along buoy line
 

@@ -413,7 +413,7 @@ RBR_temp_agg19.Q1=RBR_temp_agg19Q%>%
          sdT=rollapply(Temperature, width = 20, FUN = sd, fill=NA)) %>%
   mutate(loT=mnT- (3*sdT), hiT=mnT+ (3*sdT))%>%
   full_join(., RBR_temp_agg19)%>%
-  mutate(flagT=ifelse((Temperature<loT&!is.na(loT))|(Temperature>hiT&!is.na(hiT)), 'o', 'n'))
+  mutate(flag_temperature=ifelse((Temperature<loT&!is.na(loT))|(Temperature>hiT&!is.na(hiT)), 'o', 'n'))
 
 #   2. Add in year
 RBR_temp_agg19.Q2 <- transform(RBR_temp_agg19.Q1,
@@ -421,7 +421,7 @@ RBR_temp_agg19.Q2 <- transform(RBR_temp_agg19.Q1,
 
 #   3. Select for relevant parameters
 RBR_temp_agg19.Q3 <- subset(RBR_temp_agg19.Q2, select=c(sensor, deployment, year, timestamp1, depth,
-                                                        Temperature, flagT))
+                                                        Temperature, flag_temperature))
 colnames(RBR_temp_agg19.Q3)[6] = "temperature"
 
 ## ---------------------------
@@ -435,7 +435,7 @@ range(old.datTemp$timestamp1)
 
 #   2. Select for relevant parameters
 old.datTemp <- subset(old.datTemp, select=c(sensor, deployment, year, timestamp1, depth,
-                                            temperature, flagT))
+                                            temperature, flag_temperature))
 
 #   3. Add in Summer 2019 data:
 RBR_temp_agg19.Q4 <- rbind(old.datTemp, RBR_temp_agg19.Q3)
@@ -444,12 +444,27 @@ summary(RBR_temp_agg19.Q4)
 colnames(RBR_temp_agg19.Q4)[4] = "timestamp"
 
 #   4. Plot and facet by deployment:
-p <- ggplot(RBR_temp_agg19.Q4, aes(x=timestamp, y=(temperature), colour =(depth), shape=flagT)) +
+p <- ggplot(RBR_temp_agg19.Q4, aes(x=timestamp, y=(temperature), colour =(depth), shape=flag_temperature)) +
   geom_point(alpha = 0.5) + 
   theme_classic() + 
-  facet_wrap(~flagT)
+  facet_wrap(~flag_temperature)
 
-# write.csv(RBR_temp_agg19.Q4,  paste0(outputDir,"Summer2019_RBR_Temp.csv")) # complied data file of all RBR sensors along buoy line
+#   5. Double chec for duplicated values:
+RBR_temp_agg19.Q4%>%select(deployment, timestamp, depth)%>%duplicated()%>%sum() # 2 dups
+
+View(RBR_temp_agg19.Q4%>%
+       inner_join(
+         RBR_temp_agg19.Q4 %>%
+           group_by(deployment, timestamp, depth) %>%
+           summarize(ct=dplyr::n())%>% filter(ct>1)))
+
+# Remove values:
+RBR_temp_agg19.Q5 = RBR_temp_agg19.Q4 %>%
+  distinct(deployment, timestamp, depth, .keep_all = TRUE)
+
+RBR_temp_agg19.Q5%>%select(deployment, timestamp, depth)%>%duplicated()%>%sum() 
+
+# write.csv(RBR_temp_agg19.Q5,  paste0(outputDir,"Summer2019_RBR_Temp.csv")) # complied data file of all RBR sensors along buoy line
 
 ## ---------------------------
 # VI. End notes:

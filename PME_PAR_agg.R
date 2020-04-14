@@ -169,7 +169,11 @@ PME_PAR_agg19.Q1=PME_PAR_agg19Q %>%
     flag_At=
       case_when( 
         tilt.y<loAt&!is.na(loAt) ~ 'o',
-        tilt.y>hiAt&!is.na(hiAt) ~ 'o', TRUE ~ 'n'))
+        tilt.y>hiAt&!is.na(hiAt) ~ 'o', TRUE ~ 'n')) %>%
+  mutate(
+    flag_battery=
+      case_when( 
+        Battery<1.5 ~ 'q', TRUE ~ 'n'))
 
 
 # 3.Check the flags 
@@ -196,14 +200,14 @@ names(PME_PAR_agg19.Q2)
 PME_PAR_agg19.Q2 <- subset(PME_PAR_agg19.Q1, select=c(sensor, deployment, year, timestamp1, depth,
                                                       Temperature, PAR, Acceleration.X, Acceleration.Y,
                                                       Acceleration.Z, tilt.y, Battery, flag_temperature, flag_Ax, 
-                                                      flag_Ay, flag_Az, flag_At))
+                                                      flag_Ay, flag_Az, flag_At, flag_battery))
 
 
 #   2. Select for relevant parameters
 old.datPAR.Q <- subset(old.datPAR, select=c(Sensor, deployment, year, timestamp1, depth,
                                             Temperature, PAR, Acceleration.X, Acceleration.Y,
                                             Acceleration.Z, tilt.y, Battery, flag_temperature, flag_Ax, 
-                                            flag_Ay, flag_Az, flag_At))
+                                            flag_Ay, flag_Az, flag_At, flag_battery))
 names(old.datPAR.Q)
 colnames(old.datPAR.Q)[1] = "sensor"
 
@@ -220,9 +224,13 @@ colnames(PME_PAR_agg19.T)[10] = "acceleration.Z"
 colnames(PME_PAR_agg19.T)[12] = "battery"
 
 #   5.Plot and color by deployment, depth or flag:
-p <- ggplot(PME_PAR_agg19.T, aes(x=timestamp, y=(PAR), colour =as.factor(flag_tilt))) +
+p <- ggplot(PME_PAR_agg19.T, aes(x=timestamp, y=(PAR), colour =as.factor(flag_At))) +
   geom_point(alpha = 0.5) +
   theme_classic() + xlab("Time stamp") + ylab("PAR") 
+
+#   6. Double chec for duplicated values:
+PME_PAR_agg19.T%>%select(deployment, timestamp, depth)%>%duplicated()%>%sum() # 0 dups
+
 
 #write.csv(PME_PAR_agg19.T, paste0(outputDir,"Summer2019_PME_PAR.csv")) 
 

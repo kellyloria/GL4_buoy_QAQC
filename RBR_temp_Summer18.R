@@ -182,18 +182,18 @@ rbr_dat_exp.Q=rbr_dat_exp%>%
          sdT=rollapply(Temperature, width = 20, FUN = sd, fill=NA)) %>%
   mutate(loT=mnT- (3*sdT), hiT=mnT+ (3*sdT))%>%
   full_join(., rbr_dat_exp)%>%
-  mutate(flagT=ifelse((Temperature<loT&!is.na(loT))|(Temperature>hiT&!is.na(hiT)), 'o', 'n'))
+  mutate(flag_temperature=ifelse((Temperature<loT&!is.na(loT))|(Temperature>hiT&!is.na(hiT)), 'o', 'n'))
 
 # 2. Check to make sure all sensors + data are there
 Summer2018_RBR <- qplot(timestamp, Temperature, data = rbr_dat_exp.Q, geom="point",
-                        color = factor(Depth), shape= flagT) +
+                        color = factor(Depth), shape= flag_temperature) +
   theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0)) + 
-  theme_classic() + facet_wrap(~flagT)
+  theme_classic() + facet_wrap(~flag_temperature)
 #ggsave("Summer2018_RBR.pdf", Summer2018_RBR, scale = 2, width = 15, height = 5, units = c("cm"), dpi = 500)
 
 # 3. Remove unwanted variables:
 Summer2018_RBR <- subset(rbr_dat_exp.Q, select=c(Sensor, deployment, year, timestamp, Depth,
-                                                 Temperature, flagT))
+                                                 Temperature, flag_temperature))
 
 # 4. change names
 colnames(Summer2018_RBR)[1] = "sensor"

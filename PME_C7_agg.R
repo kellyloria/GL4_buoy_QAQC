@@ -304,7 +304,11 @@ PME_C7_agg19.Q=PME_C7_agg19 %>%
       case_when( #may as well add the m in here since your metadata days that flag was used
         C7_output<loC7&!is.na(loC7) ~ 'o',
         C7_output>hiC7&!is.na(hiC7) ~ 'o', 
-        timestamp <= as.POSIXct('2018-07-29 00:00:00') ~ 'q', TRUE ~ 'n'))  
+        timestamp <= as.POSIXct('2018-07-29 00:00:00') ~ 'q', TRUE ~ 'n')) %>%
+  mutate(
+    flag_battery=
+      case_when( 
+        battery<1.5 ~ 'q', TRUE ~ 'n'))
 
 # 3.Check the flag 
 p <- ggplot(PME_C7_agg19.Q, aes(x=timestamp, y=(C7_output), colour =as.factor(flag_C7), shape= deployment)) +
@@ -314,9 +318,25 @@ p <- ggplot(PME_C7_agg19.Q, aes(x=timestamp, y=(C7_output), colour =as.factor(fl
 # 4. Remove unwanted variables:
 PME_C7_agg19.Q2 <- subset(PME_C7_agg19.Q, select=c(sensor, deployment, year, timestamp, depth,
                                                     temperature, C7_output, gain, est.chl_a,
-                                                    battery, flag_temperature, flag_C7))
+                                                    battery, flag_temperature, flag_C7, flag_battery))
+
+#   5. Double chec for duplicated values:
+PME_C7_agg19.Q2%>%select(deployment, timestamp, depth)%>%duplicated()%>%sum() # 2 dups
+
+View(PME_C7_agg19.Q2%>%
+       inner_join(
+         PME_C7_agg19.Q2 %>%
+           group_by(deployment, timestamp, depth) %>%
+           summarize(ct=dplyr::n())%>% filter(ct>1)))
+
+# Remove values:
+PME_C7_agg19.Q3 = PME_C7_agg19.Q2 %>%
+  distinct(deployment, timestamp, depth, .keep_all = TRUE)
+
+PME_C7_agg19.Q3%>%select(deployment, timestamp, depth)%>%duplicated()%>%sum() 
+
 # 5. Export and save data:
-# write.csv(PME_C7_agg19.Q2, paste0(outputDir, "Summer2019_PME_C7.csv")) # complied data file of all DO sensors along buoy line
+# write.csv(PME_C7_agg19.Q3, paste0(outputDir, "Summer2019_PME_C7.csv")) # complied data file of all DO sensors along buoy line
 
 ## ---------------------------
 # VIII. End notes:

@@ -214,31 +214,35 @@ PME_DO_summer_agg.Q=PME_DO_summer_agg %>%
   mutate(
     flag_Q=
       case_when( 
-        Q<0.7 ~ 'q', TRUE ~ 'n'))
+        Q<0.7 ~ 'q', TRUE ~ 'n')) %>%
+  mutate(
+    flag_battery=
+      case_when( 
+        Battery<1.5 ~ 'q', TRUE ~ 'n'))
 
-p <- ggplot(PME_DO_summer_agg.Q, aes(x=timestamp, y=(Dissolved.Oxygen), 
+p <- ggplot(PME_DO_summer_agg.Q, aes(x=timestamp, y=Dissolved.Oxygen, 
                                   colour =as.factor(flag_Q), shape= deployment)) +
   geom_point(alpha = 0.7)  +
   theme_classic() + facet_wrap(~flag_Q)
 
-#   4. Add in year 
-PME_DO_summer19.Q2 <- transform(PME_DO_summer_agg.Q1,
+#   2. Add in year 
+PME_DO_summer_agg.Q1 <- transform(PME_DO_summer_agg.Q,
                                 year = as.numeric(format(timestamp, '%Y')))
-names(PME_DO_summer19.Q2)
+names(PME_DO_summer_agg.Q1)
 
 ## ---------------------------
 # VIII. Combine 2019 Summer Agg and 2018 Summer data 
 
 #   1. Select for relevant parameters
-PME_DO_summer19.Q3 <- subset(PME_DO_summer19.Q2, select=c(sensor, deployment, year, timestamp, depth,
+PME_DO_summer19.Q <- subset(PME_DO_summer_agg.Q1, select=c(sensor, deployment, year, timestamp, depth,
                                                           Temperature, Dissolved.Oxygen, Dissolved.Oxygen.Saturation, 
                                                           Battery, Q, flag_temperature, flag_DO, flag_Q))
 #   2. Change names
-names((PME_DO_summer19.Q3))
-colnames(PME_DO_summer19.Q3)[6] = "temperature"
-colnames(PME_DO_summer19.Q3)[7] = "DO"
-colnames(PME_DO_summer19.Q3)[8] = "DO_saturation"
-colnames(PME_DO_summer19.Q3)[9] = "battery"
+names((PME_DO_summer19.Q))
+colnames(PME_DO_summer19.Q)[6] = "temperature"
+colnames(PME_DO_summer19.Q)[7] = "DO"
+colnames(PME_DO_summer19.Q)[8] = "DO_saturation"
+colnames(PME_DO_summer19.Q)[9] = "battery"
 
 #   3. Read in past year's data - here 2018 summer
 old.datDO <- read.csv(paste0(inputDir,"/2018_2019/DO/1808_1907_deployment/Summer2018_PME_DO.csv"), header=T)
@@ -250,20 +254,35 @@ range(old.datDO$timestamp1)
 #   5.select for relevant parameters
 old.datDO.Q <- subset(old.datDO, select=c(sensor, deployment, year, timestamp1, Depth,
                                           temperature, DO, DO_saturation, 
-                                          battery, Q, flagT, flagDO))
+                                          battery, Q, flag_temperature, flag_DO, flag_Q))
 #   6. Change names
 names((old.datDO.Q))
 colnames(old.datDO.Q)[4] = "timestamp"
 colnames(old.datDO.Q)[5] = "depth"
 
-PME_DO_summer_agg.Q4 <- rbind(old.datDO.Q, PME_DO_summer19.Q3)
-summary(PME_DO_summer_agg.Q4)
+PME_DO_summer_agg.QA1 <- rbind(old.datDO.Q, PME_DO_summer19.Q)
+summary(PME_DO_summer_agg.QA1)
 
 #   7. Plot and color by deployment:
-p <- ggplot(PME_DO_summer_agg.Q4, aes(x=timestamp, y=(DO), colour =(depth), shape = flagDO)) +
+p <- ggplot(PME_DO_summer_agg.QA1, aes(x=timestamp, y=(DO), colour =(depth), shape = flag_DO)) +
   geom_point(alpha = 0.5) + theme_classic()
 
-#write.csv(PME_DO_summer_agg.Q4, paste0(outputDir,"Summer2019_PME_DO.csv")) # complied data file of all DO sensors along buoy line
+#   8. Double chec for duplicated values:
+PME_DO_summer_agg.QA1%>%select(deployment, timestamp, depth)%>%duplicated()%>%sum() # 2 dups
+
+View(PME_DO_summer_agg.QA1%>%
+       inner_join(
+         PME_DO_summer_agg.QA1 %>%
+           group_by(deployment, timestamp, depth) %>%
+           summarize(ct=dplyr::n())%>% filter(ct>1)))
+
+# Remove values:
+PME_DO_summer_agg.QA2 = PME_DO_summer_agg.QA1 %>%
+  distinct(deployment, timestamp, depth, .keep_all = TRUE)
+
+PME_DO_summer_agg.QA2%>%select(deployment, timestamp, depth)%>%duplicated()%>%sum() 
+
+#write.csv(PME_DO_summer_agg.QA2, paste0(outputDir,"Summer2019_PME_DO.csv")) # complied data file of all DO sensors along buoy line
 
 ## ---------------------------
 # IX. End notes:

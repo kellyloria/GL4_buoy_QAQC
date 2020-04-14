@@ -78,37 +78,52 @@ PME_DO_dat$deployment <- "Summer2018"
 
 ## ---------------------------
 # V. QA'QC for temperature and DO
-PME_DO_dat.Q=PME_DO_dat%>%
+#   4. Select for relevant parameters
+
+PME_DO_dat.Q=PME_DO_dat %>% 
+  mutate(Temperature=ifelse(Temperature>35, NA, Temperature)) %>%
   mutate(hour=lubridate::hour(timestamp))%>%
   arrange(deployment, Depth, timestamp)%>%
-  group_by(deployment, Depth, hour)%>%
-  mutate(mnT=rollapply(Temperature, width = 25, FUN = mean, fill=NA),
-         sdT=rollapply(Temperature, width = 25, FUN = sd, fill=NA)) %>%
+  group_by(deployment, Depth, hour)%>% #this will get the nearest 15, but could be fewer if some are missing OR >35C, I think (?) the 35 are bogus so that is ok but you could
+  mutate(mnT=rollapply(Temperature, width = 15, FUN = mean, fill=NA),           # also filter out the NAs and >35s if you wanted to always have 15 values in your rolling window after removing bad values
+         sdT=rollapply(Temperature, width = 15, FUN = sd, fill=NA)) %>%
   mutate(loT=mnT- (3*sdT), hiT=mnT+ (3*sdT))%>%
-  full_join(., PME_DO_dat)%>%
-  mutate(flagT=ifelse((Temperature<loT&!is.na(loT))|(Temperature>hiT&!is.na(hiT)), 'o', 'n'))
-
-#   2. QA'QC for DO
-PME_DO_dat.Q1=PME_DO_dat.Q%>%
-  arrange(deployment, Depth, timestamp)%>%
-  group_by(deployment, Depth, hour)%>%
-  mutate(mnDO=rollapply(Dissolved.Oxygen, width = 25, FUN = mean, fill=NA),
-         sdDO=rollapply(Dissolved.Oxygen, width = 25, FUN = sd, fill=NA)) %>%
+  mutate(mnDO=rollapply(Dissolved.Oxygen, width = 15, FUN = mean, fill=NA),
+         sdDO=rollapply(Dissolved.Oxygen, width = 15, FUN = sd, fill=NA)) %>%
   mutate(loDO=mnDO- (3*sdDO), hiDO=mnDO+ (3*sdDO))%>%
-  full_join(., PME_DO_dat.Q)%>%
-  mutate(flagDO=ifelse((Dissolved.Oxygen<loDO&!is.na(loDO))|
-                        (Dissolved.Oxygen>hiDO&!is.na(hiDO)), 'o', 'n'))
+  full_join(., PME_DO_dat)%>% #then use case_when to sort the final flags
+  mutate(
+    flag_temperature=
+      case_when( #may as well add the m in here since your metadata days that flag was used
+        is.na(Temperature) ~ 'm',
+        Temperature>35 ~ 'q',
+        Temperature<loT&!is.na(loT) ~ 'o',
+        Temperature>hiT&!is.na(hiT) ~ 'o',
+        Temperature<0 ~ 'q', TRUE ~ 'n')) %>%
+  mutate(
+    flag_DO=
+      case_when( #may as well add the m in here since your metadata days that flag was used
+        Dissolved.Oxygen<loDO&!is.na(loDO) ~ 'o',
+        Dissolved.Oxygen>hiDO&!is.na(hiDO) ~ 'o', TRUE ~ 'n')) %>%
+  mutate(
+    flag_Q=
+      case_when( 
+        Q<0.7 ~ 'q', TRUE ~ 'n')) %>%
+  mutate(
+    flag_battery=
+      case_when( 
+        Battery<1.5 ~ 'q', TRUE ~ 'n'))
 
 #   3. Check out flagged values
-p <- ggplot(PME_DO_dat.Q1, aes(x=timestamp, y=(Dissolved.Oxygen), 
-                              colour =as.factor(flagDO), shape= deployment)) +
+p <- ggplot(PME_DO_dat.Q, aes(x=timestamp, y=(Dissolved.Oxygen), 
+                              colour =as.factor(flag_temperature), shape= deployment)) +
   geom_point(alpha = 0.5)  +
-  theme_classic() + facet_wrap(~flagDO)
+  theme_classic() + facet_wrap(~flag_temperature)
 
 #   4. Select for relevant parameters
-PME_DO_dat_exp <- subset(PME_DO_dat.Q1, select=c(sensor, deployment, year, timestamp, Depth,
+PME_DO_dat_exp <- subset(PME_DO_dat.Q, select=c(sensor, deployment, year, timestamp, Depth,
                                               Temperature, Dissolved.Oxygen, Dissolved.Oxygen.Saturation, 
-                                              Battery, Q, flagT, flagDO))
+                                              Battery, Q, flag_temperature, flag_DO, flag_Q, flag_battery))
 summary(PME_DO_dat_exp)
 
 #   5. Change names:
