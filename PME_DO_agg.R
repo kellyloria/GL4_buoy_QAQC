@@ -186,35 +186,40 @@ summary(PME_DO_summer_agg)
 ## ---------------------------
 # VIII. QA'QC for temperature and DO
 
-#   1. Remove all the temperature values out of range 0-35 degreeC
-PME_DO_summer_agg <- subset(PME_DO_summer_agg, Temperature >= 0)
-
-#   2. combine all QAQC winter 2018
-PME_DO_summer_agg.Q=PME_DO_summer_agg%>%
+PME_DO_summer_agg.Q=PME_DO_summer_agg %>% 
+  mutate(Temperature=ifelse(Temperature>35, NA, Temperature)) %>%
   mutate(hour=lubridate::hour(timestamp))%>%
   arrange(deployment, depth, timestamp)%>%
-  group_by(deployment, depth, hour)%>%
-  mutate(mnT=rollapply(Temperature, width = 25, FUN = mean, fill=NA),
-         sdT=rollapply(Temperature, width = 25, FUN = sd, fill=NA)) %>%
+  group_by(deployment, depth, hour)%>% #this will get the nearest 15, but could be fewer if some are missing OR >35C, I think (?) the 35 are bogus so that is ok but you could
+  mutate(mnT=rollapply(Temperature, width = 15, FUN = mean, fill=NA),           # also filter out the NAs and >35s if you wanted to always have 15 values in your rolling window after removing bad values
+         sdT=rollapply(Temperature, width = 15, FUN = sd, fill=NA)) %>%
   mutate(loT=mnT- (3*sdT), hiT=mnT+ (3*sdT))%>%
-  full_join(., PME_DO_summer_agg)%>%
-  mutate(flagT=ifelse((Temperature<loT&!is.na(loT))|(Temperature>hiT&!is.na(hiT)), 'o', 'n'))
-
-#   3. QA'QC for DO
-PME_DO_summer_agg.Q1=PME_DO_summer_agg.Q%>%
-  arrange(deployment, depth, timestamp)%>%
-  group_by(deployment, depth, hour)%>%
-  mutate(mnDO=rollapply(Dissolved.Oxygen, width = 25, FUN = mean, fill=NA),
-         sdDO=rollapply(Dissolved.Oxygen, width = 25, FUN = sd, fill=NA)) %>%
+  mutate(mnDO=rollapply(Dissolved.Oxygen, width = 15, FUN = mean, fill=NA),
+         sdDO=rollapply(Dissolved.Oxygen, width = 15, FUN = sd, fill=NA)) %>%
   mutate(loDO=mnDO- (3*sdDO), hiDO=mnDO+ (3*sdDO))%>%
-  full_join(., PME_DO_summer_agg.Q)%>%
-  mutate(flagDO=ifelse((Dissolved.Oxygen<loDO&!is.na(loDO))|
-                         (Dissolved.Oxygen>hiDO&!is.na(hiDO)), 'o', 'n'))
+  full_join(., PME_DO_summer_agg)%>% #then use case_when to sort the final flags
+  mutate(
+    flag_temperature=
+      case_when( #may as well add the m in here since your metadata days that flag was used
+        is.na(Temperature) ~ 'm',
+        Temperature>35 ~ 'q',
+        Temperature<loT&!is.na(loT) ~ 'o',
+        Temperature>hiT&!is.na(hiT) ~ 'o',
+        Temperature<0 ~ 'q', TRUE ~ 'n')) %>%
+  mutate(
+    flag_DO=
+      case_when( #may as well add the m in here since your metadata days that flag was used
+        Dissolved.Oxygen<loDO&!is.na(loDO) ~ 'o',
+        Dissolved.Oxygen>hiDO&!is.na(hiDO) ~ 'o', TRUE ~ 'n')) %>%
+  mutate(
+    flag_Q=
+      case_when( 
+        Q<0.7 ~ 'q', TRUE ~ 'n'))
 
-p <- ggplot(PME_DO_summer_agg.Q1, aes(x=timestamp, y=(Dissolved.Oxygen), 
-                                      colour =as.factor(flagDO), shape= deployment)) +
-  geom_point(alpha = 0.5)  +
-  theme_classic() + facet_wrap(~flagDO)
+p <- ggplot(PME_DO_summer_agg.Q, aes(x=timestamp, y=(Dissolved.Oxygen), 
+                                  colour =as.factor(flag_Q), shape= deployment)) +
+  geom_point(alpha = 0.7)  +
+  theme_classic() + facet_wrap(~flag_Q)
 
 #   4. Add in year 
 PME_DO_summer19.Q2 <- transform(PME_DO_summer_agg.Q1,
@@ -227,7 +232,7 @@ names(PME_DO_summer19.Q2)
 #   1. Select for relevant parameters
 PME_DO_summer19.Q3 <- subset(PME_DO_summer19.Q2, select=c(sensor, deployment, year, timestamp, depth,
                                                           Temperature, Dissolved.Oxygen, Dissolved.Oxygen.Saturation, 
-                                                          Battery, Q, flagT, flagDO))
+                                                          Battery, Q, flag_temperature, flag_DO, flag_Q))
 #   2. Change names
 names((PME_DO_summer19.Q3))
 colnames(PME_DO_summer19.Q3)[6] = "temperature"

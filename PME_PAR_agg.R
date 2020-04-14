@@ -112,58 +112,72 @@ PME_PAR_agg19Q <- transform(PME_PAR_agg19,
 ## ---------------------------
 # IV. QA'QC of PME_PAR_agg19Q
 #   1. QA'QC accelerations start with temperature
-PME_PAR_agg19.Q=PME_PAR_agg19Q%>%
+
+PME_PAR_agg19.Q1=PME_PAR_agg19Q %>% 
+  mutate(Temperature=ifelse(Temperature>35, NA, Temperature)) %>%
   mutate(hour=lubridate::hour(timestamp1))%>%
   arrange(deployment, depth, timestamp1)%>%
-  group_by(deployment, depth, hour)%>%
-  mutate(mnT=rollapply(Temperature, width = 15, FUN = mean, fill=NA),
+  group_by(deployment, depth, hour)%>% #this will get the nearest 15, but could be fewer if some are missing OR >35C, I think (?) the 35 are bogus so that is ok but you could
+  mutate(mnT=rollapply(Temperature, width = 15, FUN = mean, fill=NA),           # also filter out the NAs and >35s if you wanted to always have 15 values in your rolling window after removing bad values
          sdT=rollapply(Temperature, width = 15, FUN = sd, fill=NA)) %>%
   mutate(loT=mnT- (3*sdT), hiT=mnT+ (3*sdT))%>%
-  full_join(., PME_PAR_agg19Q)%>%
-  mutate(flagT=ifelse((Temperature<loT&!is.na(loT))|(Temperature>hiT&!is.na(hiT)), 'o', 'n'))
+  mutate(mnP=rollapply(PAR, width = 15, FUN = mean, fill=NA),
+         sdP=rollapply(PAR, width = 15, FUN = sd, fill=NA)) %>%
+  mutate(loP=mnP- (3*sdP), hiP=mnP+ (3*sdP))%>%
+  mutate(mnAx=rollapply(Acceleration.X, width = 15, FUN = mean, fill=NA),
+         sdAx=rollapply(Acceleration.X, width = 15, FUN = sd, fill=NA)) %>%
+  mutate(loAx=mnAx- (3*sdAx), hiAx=mnAx+ (3*sdAx))%>%
+  mutate(mnAy=rollapply(Acceleration.Y, width = 15, FUN = mean, fill=NA),
+         sdAy=rollapply(Acceleration.Y, width = 15, FUN = sd, fill=NA)) %>%
+  mutate(loAy=mnAy- (3*sdAy), hiAy=mnAy+ (3*sdAy))%>%
+  mutate(mnAz=rollapply(Acceleration.Z, width = 15, FUN = mean, fill=NA),
+         sdAz=rollapply(Acceleration.Z, width = 15, FUN = sd, fill=NA)) %>%
+  mutate(loAz=mnAz- (3*sdAz), hiAz=mnAz+ (3*sdAz))%>%
+  mutate(mnAt=rollapply(tilt.y, width = 15, FUN = mean, fill=NA),
+         sdAt=rollapply(tilt.y, width = 15, FUN = sd, fill=NA)) %>%
+  mutate(loAt=mnAt- (3*sdAt), hiAt=mnAt+ (3*sdAt))%>%
+  full_join(., PME_PAR_agg19Q)%>% #then use case_when to sort the final flags
+  mutate(
+    flag_temperature=
+      case_when( #may as well add the m in here since your metadata days that flag was used
+        is.na(Temperature) ~ 'm',
+        Temperature>35 ~ 'q',
+        Temperature<loT&!is.na(loT) ~ 'o',
+        Temperature>hiT&!is.na(hiT) ~ 'o',
+        Temperature<0 ~ 'q', TRUE ~ 'n')) %>%
+  mutate(
+    flag_PAR=
+      case_when( #may as well add the m in here since your metadata days that flag was used
+        PAR<loP&!is.na(loP) ~ 'o',
+        PAR>hiP&!is.na(hiP) ~ 'o', TRUE ~ 'n')) %>%
+  mutate(
+    flag_Ax=
+      case_when( 
+        Acceleration.X<loAx&!is.na(loAx) ~ 'o',
+        Acceleration.X>hiAx&!is.na(hiAx) ~ 'o', TRUE ~ 'n')) %>%   
+  mutate(
+    flag_Ay=
+      case_when( 
+        Acceleration.Y<loAy&!is.na(loAy) ~ 'o',
+        Acceleration.Y>hiAy&!is.na(hiAy) ~ 'o', TRUE ~ 'n')) %>%
+  mutate(
+    flag_Az=
+      case_when( 
+        Acceleration.Z<loAz&!is.na(loAz) ~ 'o',
+        Acceleration.Z>hiAz&!is.na(hiAz) ~ 'o', TRUE ~ 'n')) %>%
+  mutate(
+    flag_At=
+      case_when( 
+        tilt.y<loAt&!is.na(loAt) ~ 'o',
+        tilt.y>hiAt&!is.na(hiAt) ~ 'o', TRUE ~ 'n'))
 
-#   2. QA'QC Acceleration.Y
-PME_PAR_agg19.Q1=PME_PAR_agg19.Q%>%
-  arrange(deployment, depth, timestamp1)%>%
-  group_by(deployment, depth, hour)%>%
-  mutate(mnY=rollapply(Acceleration.Y, width = 15, FUN = mean, fill=NA),
-         sdY=rollapply(Acceleration.Y, width = 15, FUN = sd, fill=NA)) %>%
-  mutate(loY=mnY- (3*sdY), hiY=mnY+ (3*sdY))%>%
-  full_join(., PME_PAR_agg19.Q)%>%
-  mutate(flagY=ifelse((Acceleration.Y<loY&!is.na(loY))|(Acceleration.Y>hiY&!is.na(hiY)), 'o', 'n'))
 
-#   3. QA'QC Acceleration.Z
-PME_PAR_agg19.Q2=PME_PAR_agg19.Q1%>%
-  arrange(deployment, depth, timestamp1)%>%
-  group_by(deployment, depth, hour)%>%
-  mutate(mnZ=rollapply(Acceleration.Z, width = 15, FUN = mean, fill=NA),
-         sdZ=rollapply(Acceleration.Z, width = 15, FUN = sd, fill=NA)) %>%
-  mutate(loZ=mnZ- (3*sdZ), hiZ=mnZ+ (3*sdZ))%>%
-  full_join(., PME_PAR_agg19.Q1)%>%
-  mutate(flagZ=ifelse((Acceleration.Z<loZ&!is.na(loZ))|(Acceleration.Z>hiZ&!is.na(hiZ)), 'o', 'n'))
+# 3.Check the flags 
+p <- ggplot(PME_PAR_agg19.Q1, aes(x=timestamp1, y=(PAR), 
+                                  colour =as.factor(flag_temperature), shape= deployment)) +
+  geom_point(alpha = 0.7)  +
+  theme_classic() + facet_wrap(~flag_temperature)
 
-#   4. QA'QC accelerations:X
-PME_PAR_agg19.Q3=PME_PAR_agg19.Q2%>%
-  arrange(deployment, depth, timestamp1)%>%
-  group_by(deployment, depth, hour)%>%
-  mutate(mnX=rollapply(Acceleration.X, width = 15, FUN = mean, fill=NA),
-         sdX=rollapply(Acceleration.X, width = 15, FUN = sd, fill=NA)) %>%
-  mutate(loX=mnX- (3*sdX), hiX=mnX+ (3*sdX))%>%
-  full_join(., PME_PAR_agg19.Q2)%>%
-  mutate(flagX=ifelse((Acceleration.X<loX&!is.na(loX))|(Acceleration.X>hiX&!is.na(hiX)), 'o', 'n'))
-
-#   10. QA'QC accelerations:tilt
-PME_PAR_agg19.Q4=PME_PAR_agg19.Q3%>%
-  arrange(deployment, depth, timestamp1)%>%
-  group_by(deployment, depth, hour)%>%
-  mutate(mnTy=rollapply(tilt.y, width = 15, FUN = mean, fill=NA),
-         sdTy=rollapply(tilt.y, width = 15, FUN = sd, fill=NA)) %>%
-  mutate(loTy=mnTy- (3*sdTy), hiTy=mnTy+ (3*sdTy))%>%
-  full_join(., PME_PAR_agg19.Q3)%>%
-  mutate(flag_tilt=ifelse((tilt.y<loTy&!is.na(loTy))|(tilt.y>hiTy&!is.na(hiTy)), 'o', 'n'))
-
-qplot(timestamp1, tilt.y, data = PME_PAR_agg19.Q4, geom="point", color=flag_tilt) +
-  theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0)) 
 
 ## ---------------------------
 # V. Read in past year's data
@@ -176,25 +190,25 @@ range(old.datPAR$timestamp1)
 ## ---------------------------
 # VI. PME_PAR_agg19 + old data (Summer 2018)
 names(old.datPAR)
-names(PME_PAR_agg19.Q4)
+names(PME_PAR_agg19.Q2)
 
 #   1. Select for relevant parameters
-PME_PAR_agg19.Q5 <- subset(PME_PAR_agg19.Q4, select=c(sensor, deployment, year, timestamp1, depth,
+PME_PAR_agg19.Q2 <- subset(PME_PAR_agg19.Q1, select=c(sensor, deployment, year, timestamp1, depth,
                                                       Temperature, PAR, Acceleration.X, Acceleration.Y,
-                                                      Acceleration.Z, tilt.y, Battery, flagT, flagX, 
-                                                      flagY, flagZ, flag_tilt))
+                                                      Acceleration.Z, tilt.y, Battery, flag_temperature, flag_Ax, 
+                                                      flag_Ay, flag_Az, flag_At))
 
 
 #   2. Select for relevant parameters
 old.datPAR.Q <- subset(old.datPAR, select=c(Sensor, deployment, year, timestamp1, depth,
                                             Temperature, PAR, Acceleration.X, Acceleration.Y,
-                                            Acceleration.Z, tilt.y, Battery, flagT, flagX, 
-                                            flagY, flagZ, flag_tilt))
+                                            Acceleration.Z, tilt.y, Battery, flag_temperature, flag_Ax, 
+                                            flag_Ay, flag_Az, flag_At))
 names(old.datPAR.Q)
 colnames(old.datPAR.Q)[1] = "sensor"
 
 # Join data:
-PME_PAR_agg19.T <- rbind(old.datPAR.Q, PME_PAR_agg19.Q5)
+PME_PAR_agg19.T <- rbind(old.datPAR.Q, PME_PAR_agg19.Q2)
 summary(PME_PAR_agg19.T)
 
 #   3. change names
