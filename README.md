@@ -11,6 +11,8 @@ All scripts read in raw data from the Niwot LTER Server so initial file paths fo
   
   All current scripts in which ongoing sensor QA'QC can take place are labeled with "_agg"
   
+  We included one script "PME_C7_aggCHLA" in which we try to correct C7 output for chlorophyll-a concnetrations. However   this method looked a little questionable so we decided to cut it from the published data. 
+  
 # File names:
 All raw data files are named with the sensor measurement (DO, PAR, C7, Temp), the sensor serial number, the deployment date range (07_03_08_21_2018, means July 3th 2018 to August 21st 2018) and deployment depth in meter. 
 
