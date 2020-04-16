@@ -20,12 +20,27 @@ if (dir.exists('/Volumes/data/data2/rawarchive/gl4/buoy/')){
   inputDir<- '/Volumes/data/data2/rawarchive/gl4/buoy/'
   outputDir<- '/Users/kellyloria/Desktop/' 
 }
+
 # Don't forget to 
 #     1. Set output path to personal desktop 
 #     2. Physically move final files (pending datamanager approval) into final folder in server
 
 ## ---------------------------
-# I. Summer 2018 deployment
+# Important note:
+#    This script is for comparing the raw C7 output with chlorophyll-a exctractions
+
+## ---------------------------
+# I. For C7 output corrections 
+# read in chl-a extractions: water_qualityCHLA.csv
+chla1819 <- read.csv(paste0(inputDir, "2018_2019/C7/1808_1907_deployment/water_qualityCHLA.csv"), header=T)
+names(chla1819)
+
+# 2. Fix date and timestamp - so it is no longer a character:
+chla1819$ndate <- as.Date(as.Date.character(chla1819$date, format="%Y-%m-%d"))
+range(chla1819$ndate)
+
+## ---------------------------
+# II. Summer 2018 deployment
 old.datC7 <- read.csv(paste0(inputDir, "2018_2019/C7/1808_1907_deployment/gl4.buoy.PMEC7.data.csv"), header=T)
 
 # 1. Fix timestamp - so it is no longer a character:
@@ -35,6 +50,40 @@ summary(old.datC7)
 
 # 2. Check data distribution through plots:
 qplot(timestamp1, C7_output, data = old.datC7, geom="point") +
+  #scale_x_datetime(date_breaks = "504 hour", labels = date_format("%b %d")) +
+  theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0)) 
+
+# 3. Compare C7 output with chl-a extraction values. 
+#       Need to extract just dates from timestamps and then restrict for morining sampling
+old.datC7 <- transform(old.datC7, ndate = as.Date(timestamp1))
+old.datC7.1 <- with(old.datC7, old.datC7[hour(timestamp1)>= 10 & hour(timestamp1) < 12 , ] )
+
+# 4. Combine C7 output and chl-a extractions
+sum18comp <- left_join(old.datC7.1, chla1819[c("ndate", "depth","chl_a")],
+                       by = c("ndate" = "ndate"))
+summary(sum18comp)
+
+# 5. Plot the new combined data
+p <- ggplot(sum18comp) +
+  geom_point(aes(x=ndate, y=(C7_output)), color="#57a6ad", alpha = 0.2) +
+  geom_point(aes(x=ndate, y=(chl_a)), shape = 17, color="#316326", alpha = 0.8)  +
+  theme_classic() 
+
+# 5b.Plot the relationship between chl-a values and C7 values
+p <- ggplot(sum18comp, aes(x=chl_a, y=C7_output)) +
+  geom_point(alpha = 0.2)  +
+  stat_smooth(method ="lm") +
+  theme_classic()  
+
+# 6. Get a beta value for the relationship between chl-a values and C7 values
+sum18comp.mod <- lmer(chl_a ~ C7_output + (1|depth.y), data=sum18comp)
+summary(sum18comp.mod)
+ranef(sum18comp.mod) # get intercept for random effect for same depth as sensor deployment 
+
+# 7. Transfor output for chl-a beta estimate
+old.datC7$chlora20 <- (old.datC7$chlora * 0.07645 + 6.74309)
+
+qplot(timestamp1, chlora20, data = old.datC7, geom="point") +
   #scale_x_datetime(date_breaks = "504 hour", labels = date_format("%b %d")) +
   theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0)) 
 
@@ -61,10 +110,45 @@ qplot(timestamp1, Sensor, data = C7.3m, geom="point") +
   #scale_x_datetime(date_breaks = "504 hour", labels = date_format("%b %d")) +
   theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0))
 
-# 5. Add in column for depth, deployment and sensor 
+# 5. Compare C7 output with chl-a extraction values. 
+#       Need to extract just dates from timestamps and then restrict for morining sampling and
+#       add in variable for depth
+C7.3m <- transform(C7.3m, ndate = as.Date(timestamp1))
+C7.3m.1 <- with(C7.3m, C7.3m[hour(timestamp1)>= 10 & hour(timestamp1) < 12 , ] )
+
+# 6. Combine C7 output and chl-a extractions
+win18comp <- left_join(C7.3m.1, chla1819[c("ndate","chl_a")],
+                       by = c("ndate" = "ndate"))
+summary(win18comp)
+
+# 7. Plot the combined data
+p <- ggplot(win18comp) +
+  geom_point(aes(x=ndate, y=Sensor), color="#57a6ad", alpha = 0.2) +
+  geom_point(aes(x=ndate, y=(chl_a)), shape = 17, color="#316326", alpha = 0.8)  +
+  theme_classic() 
+
+# 7b.Plot the relationship between chl-a values and C7 values
+p <- ggplot(win18comp, aes(x=chl_a, y=Sensor)) +
+  geom_point(alpha = 0.2)  +
+  stat_smooth(method ="lm") +
+  theme_classic()  
+
+# 8. Get a beta value for the relationship between chl-a values and C7 values
+win18comp.mod <- glm(chl_a ~ Sensor, data=win18comp)
+summary(win18comp.mod)
+
+# 9. Transfor output for chl-a estimate
+C7.3m$chlora20 <- ((C7.3m$Sensor * 0.01634) + 5.74022)
+
+# 10. Add in column for depth, deployment and sensor 
 C7.3m$depth <- 3
 C7.3m$deployment <- "Winter2018"
 C7.3m$sensor <- 240115
+
+# 11. Plot transformed data
+qplot(timestamp1, chlora20, data = C7.3m, geom="point") +
+  #scale_x_datetime(date_breaks = "504 hour", labels = date_format("%b %d")) +
+  theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0)) 
 
 ## ---------------------------
 # IV Combine Summer2018 + Winter2018 data
@@ -75,12 +159,12 @@ PME_C7_winter18 <- transform(C7.3m,
 
 # 2. Select for relevant parameters
 old.datC7_1 <- subset(old.datC7, select=c(sensor, deployment, year, timestamp1, depth,
-                                          temperature, C7_output, gain,
+                                          temperature, C7_output, gain, chlora20,
                                           battery))
 
 # 3. Select for relevant parameters
 PME_C7_winter18_1 <- subset(PME_C7_winter18, select=c(sensor, deployment, year, timestamp1, depth,
-                                                      Temperature, Sensor, Gain,
+                                                      Temperature, Sensor, Gain, chlora20,
                                                       Battery))
 # 4. Change names of column to match data
 colnames(PME_C7_winter18_1)[6] = "temperature"
@@ -93,7 +177,7 @@ PME_C7_agg18 <- rbind(old.datC7_1, PME_C7_winter18_1)
 summary(PME_C7_agg18)
 
 # 6. Plot and facet by deployment:
-p <- ggplot(PME_C7_agg18, aes(x=timestamp1, y=(C7_output), colour =as.factor(deployment))) + # can swap color for deployment too 
+p <- ggplot(PME_C7_agg18, aes(x=timestamp1, y=(chlora20), colour =as.factor(deployment))) + # can swap color for deployment too 
   geom_point(alpha = 0.5) +
   #stat_smooth(method="lm", se=TRUE, formula=y ~ poly(x, 3, raw=TRUE), alpha=0.15) +
   theme_classic() + xlab("Time stamp") 
@@ -123,10 +207,37 @@ qplot(timestamp1, Sensor, data = C7.9m, geom="point") +
 C7.9m <- transform(C7.9m, ndate = as.Date(timestamp1))
 C7.9m.1 <- with(C7.9m, C7.9m[hour(timestamp1)>= 10 & hour(timestamp1) < 12 , ] )
 
-# 6. Add in column for depth, deployment and sensor 
+# 6. Combine C7 output and chl-a extractions
+sum19comp <- left_join(C7.9m.1, chla1819[c("ndate", "depth","chl_a")],
+                       by = c("ndate" = "ndate"))
+
+# 7. Plot the combined data
+p <- ggplot(sum19comp) +
+  geom_point(aes(x=ndate, y=(Sensor)), color="#57a6ad", alpha = 0.2) +
+  geom_point(aes(x=ndate, y=(chl_a)), shape = 17, color="#316326", alpha = 0.8)  +
+  theme_classic() 
+
+p <- ggplot(sum19comp, aes(x=chl_a, y=Sensor)) +
+  geom_point(alpha = 0.2)  +
+  stat_smooth(method ="lm") +
+  theme_classic()  
+
+# 8. Get a beta value for the relationship between chl-a values and C7 values
+sum19comp.mod <- lmer(chl_a ~ Sensor + (1|depth.y), data=sum19comp)
+summary(sum19comp.mod)
+
+# 9. Transfor output for chl-a estimate
+C7.9m$chlora20 <- ((C7.9m$Sensor * 0.01118) + 0.35978)
+
+# 10. Add in column for depth, deployment and sensor 
 C7.9m$depth <- 9
 C7.9m$deployment <- "Summer2019"
 C7.9m$sensor <- 240115
+
+# 11. Plot transformed data
+qplot(timestamp1, chlora20, data = C7.9m, geom="point") +
+  #scale_x_datetime(date_breaks = "504 hour", labels = date_format("%b %d")) +
+  theme(axis.text.x = element_text(angle = 25, vjust = 1.0, hjust = 1.0)) 
 
 ## ---------------------------
 # VI. All C7 data + Summer2019 data
@@ -139,7 +250,7 @@ names(PME_C7_summer2019)
 
 # 2. Select for relevant parameters
 PME_C7_summer2019_1 <- subset(PME_C7_summer2019, select=c(sensor, deployment, year, timestamp1, depth,
-                                                          Temperature, Sensor, Gain,
+                                                          Temperature, Sensor, Gain, chlora20,
                                                           Battery))
 
 # 3. change names
@@ -154,9 +265,10 @@ summary(PME_C7_agg19)
 
 # 5. Fix column names
 colnames(PME_C7_agg19)[4] = "timestamp"
+colnames(PME_C7_agg19)[9] = "est.chl_a"
 
 # 6. Plot and facet by deployment:
-p <- ggplot(PME_C7_agg19, aes(x=timestamp, y=(C7_output), colour =as.factor(depth))) +
+p <- ggplot(PME_C7_agg19, aes(x=timestamp, y=(est.chl_a), colour =as.factor(depth))) +
   geom_point(alpha = 0.5)  +
   theme_classic() + xlab("Time stamp")
 
@@ -205,8 +317,8 @@ p <- ggplot(PME_C7_agg19.Q, aes(x=timestamp, y=(C7_output), colour =as.factor(fl
 
 # 4. Remove unwanted variables:
 PME_C7_agg19.Q2 <- subset(PME_C7_agg19.Q, select=c(sensor, deployment, year, timestamp, depth,
-                                                   temperature, C7_output, gain,
-                                                   battery, flag_temperature, flag_C7, flag_battery))
+                                                    temperature, C7_output, gain, est.chl_a,
+                                                    battery, flag_temperature, flag_C7, flag_battery))
 
 #   5. Double chec for duplicated values:
 PME_C7_agg19.Q2%>%select(deployment, timestamp, depth)%>%duplicated()%>%sum() # 2 dups

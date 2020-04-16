@@ -236,7 +236,7 @@ names(PME_DO_summer_agg.Q1)
 #   1. Select for relevant parameters
 PME_DO_summer19.Q <- subset(PME_DO_summer_agg.Q1, select=c(sensor, deployment, year, timestamp, depth,
                                                           Temperature, Dissolved.Oxygen, Dissolved.Oxygen.Saturation, 
-                                                          Battery, Q, flag_temperature, flag_DO, flag_Q))
+                                                          Battery, Q, flag_temperature, flag_DO, flag_Q, flag_battery))
 #   2. Change names
 names((PME_DO_summer19.Q))
 colnames(PME_DO_summer19.Q)[6] = "temperature"
@@ -254,7 +254,7 @@ range(old.datDO$timestamp1)
 #   5.select for relevant parameters
 old.datDO.Q <- subset(old.datDO, select=c(sensor, deployment, year, timestamp1, Depth,
                                           temperature, DO, DO_saturation, 
-                                          battery, Q, flag_temperature, flag_DO, flag_Q))
+                                          battery, Q, flag_temperature, flag_DO, flag_Q, flag_battery))
 #   6. Change names
 names((old.datDO.Q))
 colnames(old.datDO.Q)[4] = "timestamp"
@@ -264,11 +264,11 @@ PME_DO_summer_agg.QA1 <- rbind(old.datDO.Q, PME_DO_summer19.Q)
 summary(PME_DO_summer_agg.QA1)
 
 #   7. Plot and color by deployment:
-p <- ggplot(PME_DO_summer_agg.QA1, aes(x=timestamp, y=(DO), colour =(depth), shape = flag_DO)) +
+p <- ggplot(PME_DO_summer_agg.QA1, aes(x=timestamp, y=(DO), colour =(depth), shape = flag_battery)) +
   geom_point(alpha = 0.5) + theme_classic()
 
 #   8. Double chec for duplicated values:
-PME_DO_summer_agg.QA1%>%select(deployment, timestamp, depth)%>%duplicated()%>%sum() # 2 dups
+PME_DO_summer_agg.QA1%>%select(deployment, timestamp, depth)%>%duplicated()%>%sum() # 6 dups
 
 View(PME_DO_summer_agg.QA1%>%
        inner_join(
