@@ -210,7 +210,9 @@ PME_DO_summer_agg.Q=PME_DO_summer_agg %>%
     flag_DO=
       case_when( #may as well add the m in here since your metadata days that flag was used
         Dissolved.Oxygen<loDO&!is.na(loDO) ~ 'o',
-        Dissolved.Oxygen>hiDO&!is.na(hiDO) ~ 'o', TRUE ~ 'n')) %>%
+        Dissolved.Oxygen>hiDO&!is.na(hiDO) ~ 'o',
+        Dissolved.Oxygen.Saturation>150 ~ 'q',
+        TRUE ~ 'n')) %>%
   mutate(
     flag_Q=
       case_when( 
