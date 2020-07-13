@@ -223,7 +223,7 @@ PME_DO_summer_agg.Q=PME_DO_summer_agg %>%
         Battery<1.5 ~ 'q', TRUE ~ 'n'))
 
 p <- ggplot(PME_DO_summer_agg.Q, aes(x=timestamp, y=Dissolved.Oxygen, 
-                                  colour =as.factor(flag_Q), shape= deployment)) +
+                                  colour =as.factor(flag_DO), shape= deployment)) +
   geom_point(alpha = 0.7)  +
   theme_classic() + facet_wrap(~flag_Q)
 
@@ -266,7 +266,7 @@ PME_DO_summer_agg.QA1 <- rbind(old.datDO.Q, PME_DO_summer19.Q)
 summary(PME_DO_summer_agg.QA1)
 
 #   7. Plot and color by deployment:
-p <- ggplot(PME_DO_summer_agg.QA1, aes(x=timestamp, y=(DO), colour =(depth), shape = flag_battery)) +
+p <- ggplot(PME_DO_summer_agg.QA1, aes(x=timestamp, y=(DO), colour =(depth), shape = flag_DO)) +
   geom_point(alpha = 0.5) + theme_classic()
 
 #   8. Double chec for duplicated values:
